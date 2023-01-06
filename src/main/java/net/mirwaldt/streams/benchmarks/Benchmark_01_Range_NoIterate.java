@@ -1,6 +1,6 @@
 package net.mirwaldt.streams.benchmarks;
 
-import net.mirwaldt.streams.ParallelStream_01_Range_NoIterate;
+import net.mirwaldt.streams.util.SumUtil;
 import org.openjdk.jmh.annotations.*;
 import org.openjdk.jmh.runner.Runner;
 import org.openjdk.jmh.runner.RunnerException;
@@ -8,6 +8,7 @@ import org.openjdk.jmh.runner.options.Options;
 import org.openjdk.jmh.runner.options.OptionsBuilder;
 
 import java.util.concurrent.TimeUnit;
+import java.util.stream.IntStream;
 
 @BenchmarkMode(Mode.AverageTime)
 @OutputTimeUnit(TimeUnit.MILLISECONDS)
@@ -24,12 +25,21 @@ public class Benchmark_01_Range_NoIterate {
 
     @Benchmark
     public long flawedParallelStream() {
-        return ParallelStream_01_Range_NoIterate.flawedParallelStream();
+        return IntStream
+                .iterate(1, i -> i + 1)
+                .limit(10_000_000)
+                .filter(i -> SumUtil.sumOfDigits(i) <= 40)
+                .parallel()
+                .count();
     }
 
     @Benchmark
     public long betterParallelStream() {
-        return ParallelStream_01_Range_NoIterate.betterParallelStream();
+        return IntStream
+                .rangeClosed(1, 10_000_000)
+                .filter(i -> SumUtil.sumOfDigits(i) <= 40)
+                .parallel()
+                .count();
     }
 
     public static void main(String[] args) throws RunnerException {

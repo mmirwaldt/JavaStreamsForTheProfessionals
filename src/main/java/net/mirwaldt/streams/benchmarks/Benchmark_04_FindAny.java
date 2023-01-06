@@ -1,17 +1,14 @@
 package net.mirwaldt.streams.benchmarks;
 
-import net.mirwaldt.streams.ParallelStream_04_FindAny;
-import net.mirwaldt.streams.ParallelStream_05_GroupingByConcurrent;
+import net.mirwaldt.streams.util.SumUtil;
 import org.openjdk.jmh.annotations.*;
 import org.openjdk.jmh.runner.Runner;
 import org.openjdk.jmh.runner.RunnerException;
 import org.openjdk.jmh.runner.options.Options;
 import org.openjdk.jmh.runner.options.OptionsBuilder;
 
-import java.util.List;
-import java.util.Map;
-import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.TimeUnit;
+import java.util.stream.IntStream;
 
 @BenchmarkMode(Mode.AverageTime)
 @OutputTimeUnit(TimeUnit.MILLISECONDS)
@@ -27,12 +24,20 @@ public class Benchmark_04_FindAny {
      */
     @Benchmark
     public int findFirst() {
-        return ParallelStream_04_FindAny.findFirst();
+        return IntStream
+                .rangeClosed(1, 100_000_000)
+                .filter(i -> SumUtil.sumOfDigits(i) == 60)
+                .parallel()
+                .findFirst().orElse(-1);
     }
 
     @Benchmark
     public int findAny() {
-        return ParallelStream_04_FindAny.findAny();
+        return IntStream
+                .rangeClosed(1, 100_000_000)
+                .filter(i -> SumUtil.sumOfDigits(i) == 60)
+                .parallel()
+                .findAny().orElse(-1);
     }
 
     public static void main(String[] args) throws RunnerException {
