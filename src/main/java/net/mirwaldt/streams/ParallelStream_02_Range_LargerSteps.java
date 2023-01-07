@@ -10,7 +10,7 @@ public class ParallelStream_02_Range_LargerSteps {
         long largerStepsParallelStream = IntStream
                 .rangeClosed(1, 10_000_000)
                 .map(i -> i * 3) // in steps of 3, i.e. 3, 6, 9, ...
-                .filter(i -> SumUtil.sumOfDigits(i) == 21)
+                .filter(i -> SumUtil.sumOfDigits(i) == 12)
                 .parallel()
                 .count();
         System.out.println(largerStepsParallelStream);
