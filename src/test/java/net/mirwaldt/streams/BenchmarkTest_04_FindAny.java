@@ -14,6 +14,6 @@ public class BenchmarkTest_04_FindAny {
         long expected = benchmark.findFirstLoop();
         assertEquals(expected, benchmark.findFirstSequentialStream());
         assertEquals(expected, benchmark.findFirstParallelStream());
-        assertEquals(expected, benchmark.findAnyParallelStream());
+//        assertEquals(expected, benchmark.findAnyParallelStream()); // result can be different
     }
 }

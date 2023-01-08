@@ -14,22 +14,19 @@ import java.util.concurrent.TimeUnit;
 
 @BenchmarkMode(Mode.AverageTime)
 @OutputTimeUnit(TimeUnit.MILLISECONDS)
-@Fork(value = 3)
-@Warmup(iterations = 3)
-@Measurement(iterations = 3)
 @State(Scope.Thread)
-public class Benchmark_06_MemoryLayout {
+public class Benchmark_06_Locality {
     /*
-        Benchmark                                               Mode  Cnt    Score   Error  Units
-        Benchmark_06_MemoryLayout.sumArrayListParallel          avgt    9   22.753 ± 3.476  ms/op
-        Benchmark_06_MemoryLayout.sumArrayListSequential        avgt    9   18.862 ± 0.038  ms/op
-        Benchmark_06_MemoryLayout.sumArrayParallel              avgt    9    2.072 ± 0.008  ms/op
-        Benchmark_06_MemoryLayout.sumArraySequential            avgt    9    5.145 ± 0.019  ms/op
-        Benchmark_06_MemoryLayout.sumSortedArrayListParallel    avgt    9   52.343 ± 0.140  ms/op
-        Benchmark_06_MemoryLayout.sumSortedArrayListSequential  avgt    9  158.809 ± 0.769  ms/op
+        Benchmark                                           Mode  Cnt    Score   Error  Units
+        Benchmark_06_Locality.sumArrayListParallel          avgt   25   14.803 ± 1.425  ms/op
+        Benchmark_06_Locality.sumArrayListSequential        avgt   25   23.921 ± 0.034  ms/op
+        Benchmark_06_Locality.sumArrayParallel              avgt   25    2.612 ± 0.004  ms/op
+        Benchmark_06_Locality.sumArraySequential            avgt   25    6.605 ± 0.007  ms/op
+        Benchmark_06_Locality.sumSortedArrayListParallel    avgt   25   65.907 ± 0.071  ms/op
+        Benchmark_06_Locality.sumSortedArrayListSequential  avgt   25  205.647 ± 0.391  ms/op
      */
 
-    final int N = 20_000_000;
+    final int N = 25_000_000;
 
     int[] array;
     private ArrayList<Integer> arrayList;
@@ -95,7 +92,7 @@ public class Benchmark_06_MemoryLayout {
 
     public static void main(String[] args) throws RunnerException {
         Options opt = new OptionsBuilder()
-                .include(".*" + Benchmark_06_MemoryLayout.class.getSimpleName() + ".*")
+                .include(".*" + Benchmark_06_Locality.class.getSimpleName() + ".*")
                 .build();
 
         new Runner(opt).run();
