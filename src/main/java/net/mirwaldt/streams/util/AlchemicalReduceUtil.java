@@ -48,4 +48,25 @@ public class AlchemicalReduceUtil {
     public static char toOppositeCase(char c) {
         return isLowerCase(c) ? toUpperCase(c) : toLowerCase(c);
     }
+
+    /**
+     * scans patterns of the input string but ignoring patterns which are the results after reductions
+     * @param polymer the input string
+     * @return the number of patterns
+     */
+    public static int scan(String polymer) {
+        final String[] patterns = new String[]{"aA", "Aa", "bB", "Bb", "cC", "Cc"};
+        int result = 0;
+        for (String pattern : patterns) {
+            for (int i = 0; i < polymer.length(); i++) {
+                i = polymer.indexOf(pattern, i);
+                if(i == -1) {
+                    break;
+                } else {
+                    result++;
+                }
+            }
+        }
+        return result;
+    }
 }
