@@ -1,6 +1,6 @@
 package net.mirwaldt.streams.benchmarks;
 
-import net.mirwaldt.streams.util.SumUtil;
+import net.mirwaldt.streams.util.CollatzUtil;
 import org.openjdk.jmh.annotations.*;
 import org.openjdk.jmh.runner.Runner;
 import org.openjdk.jmh.runner.RunnerException;
@@ -14,20 +14,21 @@ import java.util.stream.IntStream;
 @OutputTimeUnit(TimeUnit.MILLISECONDS)
 @State(Scope.Thread)
 public class Benchmark_04_FindAny {
-    /*
-        Benchmark                                       Mode  Cnt   Score   Error  Units
-        Benchmark_04_FindAny.findAnyParallelStream      avgt   25  28.856 ± 0.554  ms/op
-        Benchmark_04_FindAny.findFirstLoop              avgt   25  43.463 ± 0.006  ms/op
-        Benchmark_04_FindAny.findFirstParallelStream    avgt   25  38.318 ± 0.760  ms/op
-        Benchmark_04_FindAny.findFirstSequentialStream  avgt   25  46.416 ± 0.029  ms/op
-     */
+    public static final int N = 1_000_000;
+    public static final int M = 400;
 
-    private int N = 100_000_000;
+    /*
+        Benchmark                                       Mode  Cnt    Score   Error  Units
+        Benchmark_04_FindAny.findAnyParallelStream      avgt   25   11.742 ± 0.368  ms/op
+        Benchmark_04_FindAny.findFirstLoop              avgt   25  270.425 ± 2.283  ms/op
+        Benchmark_04_FindAny.findFirstParallelStream    avgt   25   36.867 ± 0.836  ms/op
+        Benchmark_04_FindAny.findFirstSequentialStream  avgt   25  169.240 ± 1.698  ms/op
+     */
 
     @Benchmark
     public int findFirstLoop() {
         for (int i = 1; i <= N; i++) {
-            if(SumUtil.sumOfDigits(i) == 60) {
+            if(CollatzUtil.follow(i) == M) {
                 return i;
             }
         }
@@ -38,16 +39,7 @@ public class Benchmark_04_FindAny {
     public int findFirstSequentialStream() {
         return IntStream
                 .rangeClosed(1, N)
-                .filter(i -> SumUtil.sumOfDigits(i) == 60)
-                .findFirst().orElse(-1);
-    }
-
-    @Benchmark
-    public int findFirstParallelStream() {
-        return IntStream
-                .rangeClosed(1, N)
-                .filter(i -> SumUtil.sumOfDigits(i) == 60)
-                .parallel()
+                .filter(i -> CollatzUtil.follow(i) == M)
                 .findFirst().orElse(-1);
     }
 
@@ -55,9 +47,18 @@ public class Benchmark_04_FindAny {
     public int findAnyParallelStream() {
         return IntStream
                 .rangeClosed(1, N)
-                .filter(i -> SumUtil.sumOfDigits(i) == 60)
+                .filter(i -> CollatzUtil.follow(i) == M)
                 .parallel()
                 .findAny().orElse(-1);
+    }
+
+    @Benchmark
+    public int findFirstParallelStream() {
+        return IntStream
+                .rangeClosed(1, N)
+                .filter(i -> CollatzUtil.follow(i) == M)
+                .parallel()
+                .findFirst().orElse(-1);
     }
 
     public static void main(String[] args) throws RunnerException {
