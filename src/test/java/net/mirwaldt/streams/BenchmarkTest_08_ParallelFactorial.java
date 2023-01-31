@@ -20,7 +20,8 @@ public class BenchmarkTest_08_ParallelFactorial {
         assertEquals(BigInteger.valueOf(120), factorial.factorialCompletableFutureParallelMultiply(5));
         assertEquals(BigInteger.valueOf(120), factorial.factorialParallelInForkJoinPoolSequentialMultiply(5));
         assertEquals(BigInteger.valueOf(120), factorial.factorialParallelInForkJoinPoolParallelMultiply(5));
-        assertEquals(BigInteger.valueOf(120), factorial.factorialParallelStreamWithSpliterator(5));
+        assertEquals(BigInteger.valueOf(120), factorial.factorialParallelInForkJoinPoolKaratsubaParallelMultiply(5));
+        assertEquals(BigInteger.valueOf(120), factorial.factorialCompletableFutureParallelMultiply(5));
     }
 
     @Test
@@ -31,7 +32,28 @@ public class BenchmarkTest_08_ParallelFactorial {
         assertEquals(FACTORIAL_OF_50, factorial.factorialCompletableFutureSequentialMultiply(50));
         assertEquals(FACTORIAL_OF_50, factorial.factorialCompletableFutureParallelMultiply(50));
         assertEquals(FACTORIAL_OF_50, factorial.factorialParallelInForkJoinPoolSequentialMultiply(50));
-        assertEquals(FACTORIAL_OF_50, factorial.factorialParallelInForkJoinPoolParallelMultiply(50));
-        assertEquals(FACTORIAL_OF_50, factorial.factorialParallelStreamWithSpliterator(50));
+        assertEquals(FACTORIAL_OF_50, factorial.factorialParallelInForkJoinPoolKaratsubaParallelMultiply(50));
+        assertEquals(FACTORIAL_OF_50, factorial.factorialCompletableFutureParallelMultiply(50));
+    }
+
+    @Test
+    void test_1000_oneSplit() {
+        Benchmark_08_ParallelFactorial factorial = new Benchmark_08_ParallelFactorial();
+        assertEquals(factorial.factorialParallelStreamParallelMultiply(1000),
+                factorial.factorialCompletableFutureParallelMultiply(1000));
+    }
+
+    @Test
+    void test_1200_twoSplits() {
+        Benchmark_08_ParallelFactorial factorial = new Benchmark_08_ParallelFactorial();
+        assertEquals(factorial.factorialParallelStreamParallelMultiply(1200),
+                factorial.factorialCompletableFutureParallelMultiply(1200));
+    }
+
+    @Test
+    void test_10000_twoSplits() {
+        Benchmark_08_ParallelFactorial factorial = new Benchmark_08_ParallelFactorial();
+        assertEquals(factorial.factorialParallelStreamParallelMultiply(10000),
+                factorial.factorialCompletableFutureParallelMultiply(10000));
     }
 }
