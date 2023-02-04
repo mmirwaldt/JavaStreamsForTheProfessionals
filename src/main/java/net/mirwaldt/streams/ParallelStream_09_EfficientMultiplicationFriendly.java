@@ -189,7 +189,6 @@ public class ParallelStream_09_EfficientMultiplicationFriendly {
                 .invoke(new KaratsubaFactorialTask(1, n + 1, 1000, multiply));
     }
 
-
     /*
         Let's improve it to make the solution Tom-Cook-multiplication friendly
      */
@@ -217,12 +216,12 @@ public class ParallelStream_09_EfficientMultiplicationFriendly {
         if(TOM_COOK_THRESHOLD_IN_BITS <= result[1].bitLength()) {
             result[0] = multiply.apply(result[0], result[1]);
             result[1] = ONE;
-            result[2] = ONE;
         }
     }
 
     static void combine(BigInteger[] left, BigInteger[] right, BinaryOperator<BigInteger> multiply) {
-        left[0] = Stream.of(left[0], left[1], left[2], right[0], right[1], right[2])
+        left[0] = Stream.of(Stream.of(left), Stream.of(right))
+                .flatMap(s -> s)
                 .parallel()
                 .reduce(multiply)
                 .orElse(ONE);
