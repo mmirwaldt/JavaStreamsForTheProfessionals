@@ -24,6 +24,8 @@ public class Benchmark_06_Locality {
         Benchmark_06_Locality.sumArraySequential            avgt   25    6.605 ± 0.007  ms/op
         Benchmark_06_Locality.sumSortedArrayListParallel    avgt   25   65.907 ± 0.071  ms/op
         Benchmark_06_Locality.sumSortedArrayListSequential  avgt   25  205.647 ± 0.391  ms/op
+
+        Benchmark_06_Locality.sumArrayParallel and Benchmark_06_Locality.sumArraySequential are wrong
      */
 
     final int N = 25_000_000;
@@ -39,6 +41,7 @@ public class Benchmark_06_Locality {
         array = new int[N];
         for (int i = 0; i < N; i++) {
             int n = random.nextInt(1_000_000);
+            array[i] = n;
             arrayList.add(n);
         }
         sortedArrayList = new ArrayList<>(arrayList);
@@ -47,43 +50,67 @@ public class Benchmark_06_Locality {
 
     @Benchmark
     public long sumArrayListSequential() {
-        return arrayList.stream()
-                .mapToLong(i -> i)
-                .sum();
+        return sumArrayListSequential(arrayList);
     }
 
     @Benchmark
     public long sumArrayListParallel() {
+        return sumArrayListParallel(arrayList);
+    }
+
+    @Benchmark
+    public long sumArraySequential() {
+        return sumArraySequential(array);
+    }
+
+    @Benchmark
+    public long sumArrayParallel() {
+        return sumArrayParallel(array);
+    }
+
+    @Benchmark
+    public long sumSortedArrayListSequential() {
+        return sumSortedArrayListSequential(sortedArrayList);
+    }
+
+    @Benchmark
+    public long sumSortedArrayListParallel() {
+        return sumSortedArrayListParallel(sortedArrayList);
+    }
+
+    public static long sumArrayListSequential(ArrayList<Integer> arrayList) {
+        return arrayList.stream()
+                .mapToLong(i -> i)
+                .sum();
+    }
+
+    public static long sumArrayListParallel(ArrayList<Integer> arrayList) {
         return arrayList.stream()
                 .mapToLong(i -> i)
                 .parallel()
                 .sum();
     }
 
-    @Benchmark
-    public long sumArraySequential() {
+    public static long sumArraySequential(int[] array) {
         return Arrays.stream(array)
                 .mapToLong(i -> i)
                 .sum();
     }
 
-    @Benchmark
-    public long sumArrayParallel() {
+    public static long sumArrayParallel(int[] array) {
         return Arrays.stream(array)
                 .mapToLong(i -> i)
                 .parallel()
                 .sum();
     }
 
-    @Benchmark
-    public long sumSortedArrayListSequential() {
+    public static long sumSortedArrayListSequential(ArrayList<Integer> sortedArrayList) {
         return sortedArrayList.stream()
                 .mapToLong(i -> i)
                 .sum();
     }
 
-    @Benchmark
-    public long sumSortedArrayListParallel() {
+    public static long sumSortedArrayListParallel(ArrayList<Integer> sortedArrayList) {
         return sortedArrayList.stream()
                 .mapToLong(i -> i)
                 .parallel()
