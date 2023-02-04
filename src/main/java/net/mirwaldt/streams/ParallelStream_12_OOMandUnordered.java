@@ -4,7 +4,7 @@ import java.util.stream.IntStream;
 
 import static net.mirwaldt.streams.util.SumUtil.sumOfDigits;
 
-public class ParallelStream_09_OOMandUnordered {
+public class ParallelStream_12_OOMandUnordered {
     public static void main(String[] args) {
         // Doesn't lead to any OOM because unordered() was called
         System.out.println(IntStream

@@ -4,12 +4,15 @@ import org.junit.jupiter.api.Test;
 
 import java.math.BigInteger;
 
-import static net.mirwaldt.streams.benchmarks.Benchmark_08_ParallelFactorial.*;
+import static net.mirwaldt.streams.ParallelStream_09_EfficientMultiplicationFriendly.*;
+import static net.mirwaldt.streams.benchmarks.Benchmark_11_ParallelFactorial.factorialParallelInForkJoinPool;
+import static net.mirwaldt.streams.benchmarks.Benchmark_11_ParallelFactorial.factorialParallelStream;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
-public class BenchmarkTest_08_ParallelFactorial {
+public class BenchmarkTest_11_ParallelFactorial {
     public static final BigInteger FACTORIAL_OF_5 = BigInteger.valueOf(120);
-    public static final BigInteger FACTORIAL_OF_50 = new BigInteger("30414093201713378043612608166064768844377641568960512000000000000");
+    public static final BigInteger FACTORIAL_OF_50 =
+            new BigInteger("30414093201713378043612608166064768844377641568960512000000000000");
 
     @Test
     void test_5() {
@@ -17,6 +20,8 @@ public class BenchmarkTest_08_ParallelFactorial {
         assertEquals(FACTORIAL_OF_5, factorialParallelInForkJoinPool(5, BigInteger::multiply));
         assertEquals(FACTORIAL_OF_5, karatsubaFactorialParallelStream2(5, BigInteger::multiply));
         assertEquals(FACTORIAL_OF_5, karatsubaFactorialForkJoinPool(5, BigInteger::multiply));
+        assertEquals(FACTORIAL_OF_5, tomCookKaratsubaFactorialParallelStream(5, BigInteger::multiply));
+        assertEquals(FACTORIAL_OF_5, tomCookKaratsubaFactorialForkJoinPool(5, BigInteger::multiply));
     }
 
     @Test
@@ -25,6 +30,8 @@ public class BenchmarkTest_08_ParallelFactorial {
         assertEquals(FACTORIAL_OF_50, factorialParallelInForkJoinPool(50, BigInteger::multiply));
         assertEquals(FACTORIAL_OF_50, karatsubaFactorialParallelStream2(50, BigInteger::multiply));
         assertEquals(FACTORIAL_OF_50, karatsubaFactorialForkJoinPool(50, BigInteger::multiply));
+        assertEquals(FACTORIAL_OF_50, tomCookKaratsubaFactorialParallelStream(50, BigInteger::multiply));
+        assertEquals(FACTORIAL_OF_50, tomCookKaratsubaFactorialForkJoinPool(50, BigInteger::multiply));
     }
 
     @Test
@@ -34,6 +41,8 @@ public class BenchmarkTest_08_ParallelFactorial {
         assertEquals(expected, factorialParallelInForkJoinPool(1000, BigInteger::multiply));
         assertEquals(expected, karatsubaFactorialParallelStream2(1000, BigInteger::multiply));
         assertEquals(expected, karatsubaFactorialForkJoinPool(1000, BigInteger::multiply));
+        assertEquals(expected, tomCookKaratsubaFactorialParallelStream(1000, BigInteger::multiply));
+        assertEquals(expected, tomCookKaratsubaFactorialForkJoinPool(1000, BigInteger::multiply));
 
     }
 
@@ -44,13 +53,27 @@ public class BenchmarkTest_08_ParallelFactorial {
         assertEquals(expected, factorialParallelInForkJoinPool(1200, BigInteger::multiply));
         assertEquals(expected, karatsubaFactorialParallelStream2(1200, BigInteger::multiply));
         assertEquals(expected, karatsubaFactorialForkJoinPool(1200, BigInteger::multiply));
+        assertEquals(expected, tomCookKaratsubaFactorialParallelStream(1200, BigInteger::multiply));
+        assertEquals(expected, tomCookKaratsubaFactorialForkJoinPool(1200, BigInteger::multiply));
     }
 
     @Test
-    void test_10000_twoSplits() {
+    void test_10000() {
         BigInteger expected = factorialParallelStream(10000, BigInteger::multiply);
         assertEquals(expected, factorialParallelInForkJoinPool(10000, BigInteger::multiply));
         assertEquals(expected, karatsubaFactorialParallelStream2(10000, BigInteger::multiply));
         assertEquals(expected, karatsubaFactorialForkJoinPool(10000, BigInteger::multiply));
+        assertEquals(expected, tomCookKaratsubaFactorialParallelStream(10000, BigInteger::multiply));
+        assertEquals(expected, tomCookKaratsubaFactorialForkJoinPool(10000, BigInteger::multiply));
+    }
+
+    @Test
+    void test_100000() {
+        BigInteger expected = factorialParallelStream(100000, BigInteger::multiply);
+        assertEquals(expected, factorialParallelInForkJoinPool(100000, BigInteger::multiply));
+        assertEquals(expected, karatsubaFactorialParallelStream2(100000, BigInteger::multiply));
+        assertEquals(expected, karatsubaFactorialForkJoinPool(100000, BigInteger::multiply));
+        assertEquals(expected, tomCookKaratsubaFactorialParallelStream(100000, BigInteger::multiply));
+        assertEquals(expected, tomCookKaratsubaFactorialForkJoinPool(100000, BigInteger::multiply));
     }
 }
