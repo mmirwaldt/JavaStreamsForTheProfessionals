@@ -22,31 +22,16 @@ import static net.mirwaldt.streams.ParallelStream_09_EfficientMultiplicationFrie
 @State(Scope.Thread)
 public class Benchmark_11_ParallelFactorial {
     /*
-Benchmark                                                                          Mode  Cnt   Score   Error  Units
-Benchmark_11_ParallelFactorial.factorialParallelInForkJoinPoolParallelMultiply     avgt   25  16.631 ± 0.009  ms/op
-Benchmark_11_ParallelFactorial.factorialParallelInForkJoinPoolSequentialMultiply   avgt   25  29.983 ± 0.456  ms/op
-Benchmark_11_ParallelFactorial.factorialParallelStreamParallelMultiply             avgt   25  39.139 ± 0.041  ms/op
-Benchmark_11_ParallelFactorial.factorialParallelStreamSequentialMultiply           avgt   25  53.641 ± 0.168  ms/op
-Benchmark_11_ParallelFactorial.karatsubaFactorialForkJoinPoolParallelMultiply      avgt   25  17.191 ± 0.015  ms/op
-Benchmark_11_ParallelFactorial.karatsubaFactorialForkJoinPoolSequentialMultiply    avgt   25  30.619 ± 0.446  ms/op
-Benchmark_11_ParallelFactorial.karatsubaFactorialParallelStreamParallelMultiply    avgt   25  21.382 ± 0.050  ms/op
-Benchmark_11_ParallelFactorial.karatsubaFactorialParallelStreamSequentialMultiply  avgt   25  34.700 ± 0.148  ms/op
-
 Benchmark                                                                                 Mode  Cnt   Score   Error  Units
 Benchmark_11_ParallelFactorial.factorialParallelInForkJoinPoolParallelMultiply            avgt   25  16.600 ± 0.037  ms/op
 Benchmark_11_ParallelFactorial.factorialParallelInForkJoinPoolSequentialMultiply          avgt   25  29.848 ± 0.321  ms/op
 Benchmark_11_ParallelFactorial.factorialParallelStreamParallelMultiply                    avgt   25  39.127 ± 0.048  ms/op
 Benchmark_11_ParallelFactorial.factorialParallelStreamSequentialMultiply                  avgt   25  53.736 ± 0.161  ms/op
-Benchmark_11_ParallelFactorial.karatsubaFactorialForkJoinPoolParallelMultiply             avgt   25  17.352 ± 0.017  ms/op
-Benchmark_11_ParallelFactorial.karatsubaFactorialForkJoinPoolSequentialMultiply           avgt   25  30.755 ± 0.519  ms/op
-Benchmark_11_ParallelFactorial.karatsubaFactorialParallelStreamParallelMultiply           avgt   25  21.687 ± 0.052  ms/op
-Benchmark_11_ParallelFactorial.karatsubaFactorialParallelStreamSequentialMultiply         avgt   25  35.087 ± 0.178  ms/op
 Benchmark_11_ParallelFactorial.tomCookKaratsubaFactorialForkJoinPoolParallelMultiply      avgt   25  23.098 ± 0.020  ms/op
 Benchmark_11_ParallelFactorial.tomCookKaratsubaFactorialForkJoinPoolSequentialMultiply    avgt   25  36.205 ± 0.339  ms/op
 Benchmark_11_ParallelFactorial.tomCookKaratsubaFactorialParallelStreamParallelMultiply    avgt   25  18.366 ± 0.028  ms/op
 Benchmark_11_ParallelFactorial.tomCookKaratsubaFactorialParallelStreamSequentialMultiply  avgt   25  32.031 ± 0.135  ms/op
      */
-
     public int N = 100_000;
 
     @Benchmark
@@ -77,26 +62,6 @@ Benchmark_11_ParallelFactorial.tomCookKaratsubaFactorialParallelStreamSequential
     @Benchmark
     public BigInteger karatsubaFactorialParallelStreamParallelMultiply() {
         return karatsubaFactorialParallelStream2(N, BigInteger::parallelMultiply);
-    }
-
-    @Benchmark
-    public BigInteger karatsubaFactorialForkJoinPoolSequentialMultiply() {
-        return karatsubaFactorialForkJoinPool(N, BigInteger::multiply);
-    }
-
-    @Benchmark
-    public BigInteger karatsubaFactorialForkJoinPoolParallelMultiply() {
-        return karatsubaFactorialForkJoinPool(N, BigInteger::parallelMultiply);
-    }
-
-    @Benchmark
-    public BigInteger tomCookKaratsubaFactorialParallelStreamSequentialMultiply() {
-        return tomCookKaratsubaFactorialParallelStream(N, BigInteger::multiply);
-    }
-
-    @Benchmark
-    public BigInteger tomCookKaratsubaFactorialParallelStreamParallelMultiply() {
-        return tomCookKaratsubaFactorialParallelStream(N, BigInteger::parallelMultiply);
     }
 
     @Benchmark
