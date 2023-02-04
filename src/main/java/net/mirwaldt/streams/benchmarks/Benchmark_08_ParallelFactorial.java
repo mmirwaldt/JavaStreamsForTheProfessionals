@@ -8,7 +8,6 @@ import org.openjdk.jmh.runner.options.OptionsBuilder;
 
 import java.math.BigInteger;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.List;
 import java.util.concurrent.ForkJoinPool;
 import java.util.concurrent.RecursiveTask;
@@ -24,93 +23,74 @@ import java.util.stream.Stream;
 @State(Scope.Thread)
 public class Benchmark_08_ParallelFactorial {
     /*
-    Benchmark                                                                          Mode  Cnt   Score   Error  Units
-    Benchmark_08_ParallelFactorial.factorialParallelInForkJoinPoolParallelMultiply     avgt   25  16.234 ± 0.026  ms/op
-    Benchmark_08_ParallelFactorial.factorialParallelInForkJoinPoolSequentialMultiply   avgt   25  29.461 ± 0.287  ms/op
-    Benchmark_08_ParallelFactorial.factorialParallelStreamParallelMultiply             avgt   25  39.061 ± 0.053  ms/op
-    Benchmark_08_ParallelFactorial.factorialParallelStreamSequentialMultiply           avgt   25  53.536 ± 0.179  ms/op
-    Benchmark_08_ParallelFactorial.karatsubaFactorialForkJoinPoolParallelMultiply      avgt   25  17.154 ± 0.038  ms/op
-    Benchmark_08_ParallelFactorial.karatsubaFactorialForkJoinPoolSequentialMultiply    avgt   25  30.632 ± 0.537  ms/op
-    Benchmark_08_ParallelFactorial.karatsubaFactorialParallelStreamParallelMultiply    avgt   25  21.291 ± 0.021  ms/op
-    Benchmark_08_ParallelFactorial.karatsubaFactorialParallelStreamSequentialMultiply  avgt   25  34.854 ± 0.128  ms/op
+Benchmark                                                                          Mode  Cnt   Score   Error  Units
+Benchmark_08_ParallelFactorial.factorialParallelInForkJoinPoolParallelMultiply     avgt   25  16.631 ± 0.009  ms/op
+Benchmark_08_ParallelFactorial.factorialParallelInForkJoinPoolSequentialMultiply   avgt   25  29.983 ± 0.456  ms/op
+Benchmark_08_ParallelFactorial.factorialParallelStreamParallelMultiply             avgt   25  39.139 ± 0.041  ms/op
+Benchmark_08_ParallelFactorial.factorialParallelStreamSequentialMultiply           avgt   25  53.641 ± 0.168  ms/op
+Benchmark_08_ParallelFactorial.karatsubaFactorialForkJoinPoolParallelMultiply      avgt   25  17.191 ± 0.015  ms/op
+Benchmark_08_ParallelFactorial.karatsubaFactorialForkJoinPoolSequentialMultiply    avgt   25  30.619 ± 0.446  ms/op
+Benchmark_08_ParallelFactorial.karatsubaFactorialParallelStreamParallelMultiply    avgt   25  21.382 ± 0.050  ms/op
+Benchmark_08_ParallelFactorial.karatsubaFactorialParallelStreamSequentialMultiply  avgt   25  34.700 ± 0.148  ms/op
      */
 
     public int N = 100_000;
 
     @Benchmark
     public BigInteger factorialParallelStreamSequentialMultiply() {
-        return factorialParallelStreamSequentialMultiply(N);
+        return factorialParallelStream(N, BigInteger::multiply);
     }
 
     @Benchmark
     public BigInteger factorialParallelStreamParallelMultiply() {
-        return factorialParallelStreamParallelMultiply(N);
+        return factorialParallelStream(N, BigInteger::parallelMultiply);
     }
 
     @Benchmark
     public BigInteger factorialParallelInForkJoinPoolSequentialMultiply() {
-        return factorialParallelInForkJoinPoolSequentialMultiply(N);
+        return factorialParallelInForkJoinPool(N, BigInteger::multiply);
     }
 
     @Benchmark
     public BigInteger factorialParallelInForkJoinPoolParallelMultiply() {
-        return factorialParallelInForkJoinPoolParallelMultiply(N);
+        return factorialParallelInForkJoinPool(N, BigInteger::parallelMultiply);
     }
 
     @Benchmark
     public BigInteger karatsubaFactorialParallelStreamSequentialMultiply() {
-        return karatsubaFactorialParallelStream(N, BigInteger::multiply);
+        return karatsubaFactorialParallelStream2(N, BigInteger::multiply);
     }
 
     @Benchmark
     public BigInteger karatsubaFactorialParallelStreamParallelMultiply() {
-        return karatsubaFactorialParallelStream(N, BigInteger::parallelMultiply);
+        return karatsubaFactorialParallelStream2(N, BigInteger::parallelMultiply);
     }
 
     @Benchmark
     public BigInteger karatsubaFactorialForkJoinPoolSequentialMultiply() {
-        return karatsubaFactorialForkJoinPoolSequentialMultiply(N);
+        return karatsubaFactorialForkJoinPool(N, BigInteger::multiply);
     }
 
     @Benchmark
     public BigInteger karatsubaFactorialForkJoinPoolParallelMultiply() {
-        return karatsubaFactorialForkJoinPoolParallelMultiply(N);
+        return karatsubaFactorialForkJoinPool(N, BigInteger::parallelMultiply);
     }
 
-    public static BigInteger factorialParallelStreamSequentialMultiply(int n) {
+    public static BigInteger factorialParallelStream(int n, BinaryOperator<BigInteger> multiply) {
         return LongStream.rangeClosed(2, n)
                 .mapToObj(BigInteger::valueOf)
                 .parallel()
-                .reduce(BigInteger::multiply)
+                .reduce(multiply)
                 .orElse(BigInteger.ONE);
     }
 
-    public static BigInteger factorialParallelStreamParallelMultiply(int n) {
-        return LongStream.rangeClosed(2, n)
-                .mapToObj(BigInteger::valueOf)
-                .parallel()
-                .reduce(BigInteger::parallelMultiply)
-                .orElse(BigInteger.ONE);
+    public static BigInteger factorialParallelInForkJoinPool(int n, BinaryOperator<BigInteger> multiply) {
+        return ForkJoinPool.commonPool().invoke(new FactorialTask(1, n + 1, 100, multiply));
     }
 
-    public static BigInteger factorialParallelInForkJoinPoolSequentialMultiply(int n) {
+    public static BigInteger karatsubaFactorialForkJoinPool(int n,BinaryOperator<BigInteger> multiply) {
         return ForkJoinPool.commonPool()
-                .invoke(new FactorialTask(1, n + 1, 100, false));
-    }
-
-    public static BigInteger factorialParallelInForkJoinPoolParallelMultiply(int n) {
-        return ForkJoinPool.commonPool()
-                .invoke(new FactorialTask(1, n + 1, 100, true));
-    }
-
-    public static BigInteger karatsubaFactorialForkJoinPoolSequentialMultiply(int n) {
-        return ForkJoinPool.commonPool()
-                .invoke(new KaratsubaFactorialTask(1, n + 1, 1000, false));
-    }
-
-    public static BigInteger karatsubaFactorialForkJoinPoolParallelMultiply(int n) {
-        return ForkJoinPool.commonPool()
-                .invoke(new KaratsubaFactorialTask(1, n + 1, 1000, true));
+                .invoke(new KaratsubaFactorialTask(1, n + 1, 1000, multiply));
     }
 
     /*
@@ -121,7 +101,7 @@ public class Benchmark_08_ParallelFactorial {
         List<BigInteger> results = new ArrayList<>();
         for (int i = 2; i <= n; i++) {
             result = result.multiply(BigInteger.valueOf(i));
-            if (2568 < result.bitLength()) {
+            if (2560 < result.bitLength()) {
                 results.add(result);
                 result = BigInteger.ONE;
             } else if (i == n) {
@@ -141,7 +121,7 @@ public class Benchmark_08_ParallelFactorial {
         List<BigInteger> leftResults = new ArrayList<>();
         for (int i = 2; i < half; i++) {
             leftResult = leftResult.multiply(BigInteger.valueOf(i));
-            if (2568 < leftResult.bitLength()) {
+            if (2560 < leftResult.bitLength()) {
                 leftResults.add(leftResult);
                 leftResult = BigInteger.ONE;
             } else if (i == half - 1) {
@@ -152,7 +132,7 @@ public class Benchmark_08_ParallelFactorial {
         List<BigInteger> rightResults = new ArrayList<>();
         for (int i = half; i < n; i++) {
             rightResult = rightResult.multiply(BigInteger.valueOf(i));
-            if (2568 < rightResult.bitLength()) {
+            if (2560 < rightResult.bitLength()) {
                 rightResults.add(rightResult);
                 rightResult = BigInteger.ONE;
             } else if (i == n - 1) {
@@ -168,7 +148,7 @@ public class Benchmark_08_ParallelFactorial {
     /*
         First solution with a parallel stream to calculate factorial in a karatsuba-friendly way.
      */
-    public static BigInteger calcParallelStreamKaratsuba(int n) {
+    public static BigInteger karatsubaFactorialParallelStream(int n) {
         List<BigInteger> results =
                 IntStream.rangeClosed(2, n)
                         .mapToObj(BigInteger::valueOf)
@@ -193,7 +173,7 @@ public class Benchmark_08_ParallelFactorial {
 
 
     static void accumulate(List<BigInteger> list, BigInteger i) {
-        if (list.isEmpty() || 2568 < list.get(list.size() - 1).bitLength()) {
+        if (list.isEmpty() || 2560 < list.get(list.size() - 1).bitLength()) {
             list.add(i);
         } else {
             list.set(list.size() - 1, list.get(list.size() - 1).multiply(i));
@@ -204,21 +184,20 @@ public class Benchmark_08_ParallelFactorial {
         Second solution with a parallel stream to calculate factorial in a karatsuba-friendly way.
         The list was replaced by an array.
      */
-    public static BigInteger karatsubaFactorialParallelStream(int n, BinaryOperator<BigInteger> multiply) {
-        BigInteger[] results =
-                IntStream.rangeClosed(2, n)
+    public static BigInteger karatsubaFactorialParallelStream2(int n, BinaryOperator<BigInteger> multiply) {
+        BigInteger[] results = IntStream.rangeClosed(2, n)
                         .mapToObj(BigInteger::valueOf)
                         .parallel()
                         .collect(() -> new BigInteger[]{BigInteger.ONE, BigInteger.ONE},
                                 (array, i) -> accumulate2(array, i, multiply),
                                 (left, right) -> combine2(left, right, multiply)
                         );
-        return results[0];
+        return results[0].multiply(results[1]);
     }
 
     static void accumulate2(BigInteger[] bigInts, BigInteger i, BinaryOperator<BigInteger> multiply) {
-        if (2568 < bigInts[0].bitLength()) {
-            if (2568 < bigInts[1].bitLength()) {
+        if (2560 < bigInts[0].bitLength()) {
+            if (2560 < bigInts[1].bitLength()) {
                 bigInts[0] = multiply.apply(bigInts[0], bigInts[1]);
                 bigInts[1] = BigInteger.ONE;
             } else {
@@ -230,16 +209,11 @@ public class Benchmark_08_ParallelFactorial {
     }
 
     static void combine2(BigInteger[] left, BigInteger[] right, BinaryOperator<BigInteger> multiply) {
-        BigInteger result =
-                Stream.of(Arrays.stream(left), Arrays.stream(right))
-                        .flatMap(s -> s)
+        left[0] = Stream.of(left[0], left[1], right[0], right[1])
                         .parallel()
                         .reduce(multiply)
                         .orElse(BigInteger.ONE);
-        left[0] = result;
         left[1] = BigInteger.ONE;
-        right[0] = BigInteger.ONE;
-        right[1] = BigInteger.ONE;
     }
 
     /*
@@ -251,13 +225,13 @@ public class Benchmark_08_ParallelFactorial {
         private final int start;
         private final int end;
         private final int minLength;
-        private final boolean parallelMultiply;
+        private final BinaryOperator<BigInteger> multiply;
 
-        public KaratsubaFactorialTask(int start, int end, int minLength, boolean parallelMultiply) {
+        public KaratsubaFactorialTask(int start, int end, int minLength, BinaryOperator<BigInteger> multiply) {
             this.start = start;
             this.end = end;
             this.minLength = minLength;
-            this.parallelMultiply = parallelMultiply;
+            this.multiply = multiply;
         }
 
         @Override
@@ -268,7 +242,7 @@ public class Benchmark_08_ParallelFactorial {
                 List<BigInteger> results = new ArrayList<>();
                 for (int i = start; i < end; i++) {
                     result = result.multiply(BigInteger.valueOf(i));
-                    if (2568 < result.bitLength()) {
+                    if (2560 < result.bitLength()) {
                         results.add(result);
                         result = BigInteger.ONE;
                     } else if (i == end - 1) {
@@ -282,15 +256,11 @@ public class Benchmark_08_ParallelFactorial {
             } else {
                 int halfLength = length / 2;
                 KaratsubaFactorialTask leftTask =
-                        new KaratsubaFactorialTask(start, start + halfLength, minLength, parallelMultiply);
+                        new KaratsubaFactorialTask(start, start + halfLength, minLength, multiply);
                 leftTask.fork();
                 KaratsubaFactorialTask rightTask =
-                        new KaratsubaFactorialTask(start + halfLength, end, minLength, parallelMultiply);
-                if (parallelMultiply) {
-                    return rightTask.compute().parallelMultiply(leftTask.join());
-                } else {
-                    return rightTask.compute().multiply(leftTask.join());
-                }
+                        new KaratsubaFactorialTask(start + halfLength, end, minLength, multiply);
+                return multiply.apply(rightTask.compute(), leftTask.join());
             }
         }
     }
@@ -299,33 +269,30 @@ public class Benchmark_08_ParallelFactorial {
         private final int start;
         private final int end;
         private final int minLength;
-        private final boolean parallelMultiply;
+        private final BinaryOperator<BigInteger> multiply;
 
-        public FactorialTask(int start, int end, int minLength, boolean parallelMultiply) {
+        public FactorialTask(int start, int end, int minLength, BinaryOperator<BigInteger> multiply) {
             this.start = start;
             this.end = end;
             this.minLength = minLength;
-            this.parallelMultiply = parallelMultiply;
+            this.multiply = multiply;
         }
 
         @Override
         protected BigInteger compute() {
             int length = end - start;
             if (length <= minLength) {
-                return IntStream.range(start, end).mapToObj(BigInteger::valueOf)
-                        .reduce(BigInteger::multiply).orElse(BigInteger.ONE);
+                BigInteger result = BigInteger.valueOf(start);
+                for (int i = start + 1; i < end; i++) { result = result.multiply(BigInteger.valueOf(i)); }
+                return result;
             } else {
                 int halfLength = length / 2;
                 FactorialTask leftTask =
-                        new FactorialTask(start, start + halfLength, minLength, parallelMultiply);
+                        new FactorialTask(start, start + halfLength, minLength, multiply);
                 leftTask.fork();
                 FactorialTask rightTask =
-                        new FactorialTask(start + halfLength, end, minLength, parallelMultiply);
-                if (parallelMultiply) {
-                    return rightTask.compute().parallelMultiply(leftTask.join());
-                } else {
-                    return rightTask.compute().multiply(leftTask.join());
-                }
+                        new FactorialTask(start + halfLength, end, minLength, multiply);
+                return multiply.apply(rightTask.compute(), leftTask.join());
             }
         }
     }
