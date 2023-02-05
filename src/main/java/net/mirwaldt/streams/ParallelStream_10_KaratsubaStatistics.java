@@ -18,29 +18,21 @@ Multiplications:
 		Result in bits: 1516705
 		Karatsuba multiplications: 63
 		TomCook multiplications: 63
-	factorialParallelInForkJoinPool:
+	factorialParallelForkJoinPool:
 		Result in bits: 1516705
 		Karatsuba multiplications: 488
-		TomCook multiplications: 126
-	karatsubaFactorialParallelStream2:
-		Result in bits: 1516705
-		Karatsuba multiplications: 556
-		TomCook multiplications: 63
-	karatsubaFactorialForkJoinPool:
-		Result in bits: 1516705
-		Karatsuba multiplications: 516
 		TomCook multiplications: 126
 	tomCookKaratsubaFactorialParallelStream:
 		Result in bits: 1516705
 		Karatsuba multiplications: 556
-		TomCook multiplications: 125
+		TomCook multiplications: 171
 	tomCookKaratsubaFactorialForkJoinPool:
 		Result in bits: 1516705
 		Karatsuba multiplications: 572
 		TomCook multiplications: 188
  */
 public class ParallelStream_10_KaratsubaStatistics {
-    // We want to find out how many karatsuba multiplications are possible and happen in all solutions
+    // We want to find out how many karatsuba and tom-cook multiplications are possible and happen in all solutions
     public static void main(String[] args) throws ExecutionException, InterruptedException {
         BigInteger result = factorialParallelStream(100_000, BigInteger::multiply);
         System.out.println("Multiplications:");
@@ -60,21 +52,7 @@ public class ParallelStream_10_KaratsubaStatistics {
 
         watcher = new MultiplicationWatcher();
         result = factorialParallelInForkJoinPool(100_000, watcher::multiplyAndWatch);
-        System.out.println("\tfactorialParallelInForkJoinPool:");
-        System.out.println("\t\tResult in bits: " + result.bitLength());
-        System.out.println("\t\tKaratsuba multiplications: " + watcher.karatsubaCount());
-        System.out.println("\t\tTomCook multiplications: " + watcher.tomCookCount());
-
-        watcher = new MultiplicationWatcher();
-        result = karatsubaFactorialParallelStream2(100_000, watcher::multiplyAndWatch);
-        System.out.println("\tkaratsubaFactorialParallelStream2:");
-        System.out.println("\t\tResult in bits: " + result.bitLength());
-        System.out.println("\t\tKaratsuba multiplications: " + watcher.karatsubaCount());
-        System.out.println("\t\tTomCook multiplications: " + watcher.tomCookCount());
-
-        watcher = new MultiplicationWatcher();
-        result = karatsubaFactorialForkJoinPool(100_000, watcher::multiplyAndWatch);
-        System.out.println("\tkaratsubaFactorialForkJoinPool:");
+        System.out.println("\tfactorialParallelForkJoinPool:");
         System.out.println("\t\tResult in bits: " + result.bitLength());
         System.out.println("\t\tKaratsuba multiplications: " + watcher.karatsubaCount());
         System.out.println("\t\tTomCook multiplications: " + watcher.tomCookCount());
