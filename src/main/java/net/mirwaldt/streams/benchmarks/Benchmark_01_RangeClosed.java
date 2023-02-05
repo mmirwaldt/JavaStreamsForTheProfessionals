@@ -1,6 +1,5 @@
 package net.mirwaldt.streams.benchmarks;
 
-import net.mirwaldt.streams.util.SumUtil;
 import org.openjdk.jmh.annotations.*;
 import org.openjdk.jmh.runner.Runner;
 import org.openjdk.jmh.runner.RunnerException;
@@ -9,6 +8,8 @@ import org.openjdk.jmh.runner.options.OptionsBuilder;
 
 import java.util.concurrent.TimeUnit;
 import java.util.stream.IntStream;
+
+import static net.mirwaldt.streams.util.SumUtil.sumOfDigits;
 
 @BenchmarkMode(Mode.AverageTime)
 @OutputTimeUnit(TimeUnit.MILLISECONDS)
@@ -30,7 +31,7 @@ Benchmark_01_RangeClosed.sequentialLoop               avgt   25  64.198 ± 0.019
     public long sequentialLoop() {
         long result = 0;
         for (int i = 1; i <= N; i++) {
-            if(SumUtil.sumOfDigits(i) <= S) {
+            if(sumOfDigits(i) <= S) {
                 result++;
             }
         }
@@ -42,7 +43,7 @@ Benchmark_01_RangeClosed.sequentialLoop               avgt   25  64.198 ± 0.019
         return IntStream
                 .iterate(1, i -> i + 1)
                 .limit(N)
-                .filter(i -> SumUtil.sumOfDigits(i) <= S)
+                .filter(i -> sumOfDigits(i) <= S)
                 .count();
     }
 
@@ -51,7 +52,7 @@ Benchmark_01_RangeClosed.sequentialLoop               avgt   25  64.198 ± 0.019
         return IntStream
                 .iterate(1, i -> i + 1)
                 .limit(N)
-                .filter(i -> SumUtil.sumOfDigits(i) <= S)
+                .filter(i -> sumOfDigits(i) <= S)
                 .parallel()
                 .count();
     }
@@ -60,7 +61,7 @@ Benchmark_01_RangeClosed.sequentialLoop               avgt   25  64.198 ± 0.019
     public long rangeClosedSequentialStream() {
         return IntStream
                 .rangeClosed(1, N)
-                .filter(i -> SumUtil.sumOfDigits(i) <= S)
+                .filter(i -> sumOfDigits(i) <= S)
                 .count();
     }
 
@@ -68,7 +69,7 @@ Benchmark_01_RangeClosed.sequentialLoop               avgt   25  64.198 ± 0.019
     public long rangeClosedParallelStream() {
         return IntStream
                 .rangeClosed(1, N)
-                .filter(i -> SumUtil.sumOfDigits(i) <= S)
+                .filter(i -> sumOfDigits(i) <= S)
                 .parallel()
                 .count();
     }
