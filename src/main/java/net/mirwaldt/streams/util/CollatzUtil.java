@@ -1,7 +1,7 @@
 package net.mirwaldt.streams.util;
 
 public class CollatzUtil {
-    public static int follow(int n) {
+    public static int collatzSteps(int n) {
         int i = n;
         int result = 0;
         while(1 < i) {

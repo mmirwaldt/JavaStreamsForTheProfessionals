@@ -1,6 +1,5 @@
 package net.mirwaldt.streams.benchmarks;
 
-import net.mirwaldt.streams.util.CollatzUtil;
 import org.openjdk.jmh.annotations.*;
 import org.openjdk.jmh.runner.Runner;
 import org.openjdk.jmh.runner.RunnerException;
@@ -9,6 +8,8 @@ import org.openjdk.jmh.runner.options.OptionsBuilder;
 
 import java.util.concurrent.TimeUnit;
 import java.util.stream.IntStream;
+
+import static net.mirwaldt.streams.util.CollatzUtil.collatzSteps;
 
 @BenchmarkMode(Mode.AverageTime)
 @OutputTimeUnit(TimeUnit.MILLISECONDS)
@@ -28,7 +29,7 @@ public class Benchmark_04_FindAny {
     @Benchmark
     public int findFirstLoop() {
         for (int i = 1; i <= N; i++) {
-            if(CollatzUtil.follow(i) == M) {
+            if(collatzSteps(i) == M) {
                 return i;
             }
         }
@@ -39,7 +40,7 @@ public class Benchmark_04_FindAny {
     public int findFirstSequentialStream() {
         return IntStream
                 .rangeClosed(1, N)
-                .filter(i -> CollatzUtil.follow(i) == M)
+                .filter(i -> collatzSteps(i) == M)
                 .findFirst().orElse(-1);
     }
 
@@ -47,7 +48,7 @@ public class Benchmark_04_FindAny {
     public int findAnyParallelStream() {
         return IntStream
                 .rangeClosed(1, N)
-                .filter(i -> CollatzUtil.follow(i) == M)
+                .filter(i -> collatzSteps(i) == M)
                 .parallel()
                 .findAny().orElse(-1);
     }
@@ -56,7 +57,7 @@ public class Benchmark_04_FindAny {
     public int findFirstParallelStream() {
         return IntStream
                 .rangeClosed(1, N)
-                .filter(i -> CollatzUtil.follow(i) == M)
+                .filter(i -> collatzSteps(i) == M)
                 .parallel()
                 .findFirst().orElse(-1);
     }
