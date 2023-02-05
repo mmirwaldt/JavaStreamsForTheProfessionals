@@ -31,7 +31,7 @@ Multiplications:
 		Karatsuba multiplications: 572
 		TomCook multiplications: 188
  */
-public class ParallelStream_10_KaratsubaStatistics {
+public class ParallelStream_10_EfficientMultiplicationStatistics {
     // We want to find out how many karatsuba and tom-cook multiplications are possible and happen in all solutions
     public static void main(String[] args) throws ExecutionException, InterruptedException {
         BigInteger result = factorialParallelStream(100_000, BigInteger::multiply);
