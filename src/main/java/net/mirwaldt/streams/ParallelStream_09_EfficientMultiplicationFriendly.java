@@ -203,7 +203,7 @@ public class ParallelStream_09_EfficientMultiplicationFriendly {
         return results[0].multiply(results[1]).multiply(results[2]);
     }
 
-    static void accumulate(BigInteger[] result, BigInteger i, BinaryOperator<BigInteger> multiply) {
+    public static void accumulate(BigInteger[] result, BigInteger i, BinaryOperator<BigInteger> multiply) {
         if (KARATSUBA_THRESHOLD_IN_BITS <= result[1].bitLength()) {
             result[2] = result[2].multiply(i);
         } else {
@@ -219,7 +219,7 @@ public class ParallelStream_09_EfficientMultiplicationFriendly {
         }
     }
 
-    static void combine(BigInteger[] left, BigInteger[] right, BinaryOperator<BigInteger> multiply) {
+    public static void combine(BigInteger[] left, BigInteger[] right, BinaryOperator<BigInteger> multiply) {
         left[0] = Stream.of(Stream.of(left), Stream.of(right))
                 .flatMap(s -> s)
                 .parallel()
