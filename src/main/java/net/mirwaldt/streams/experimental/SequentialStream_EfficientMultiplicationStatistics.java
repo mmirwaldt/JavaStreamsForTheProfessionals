@@ -88,7 +88,7 @@ public class SequentialStream_EfficientMultiplicationStatistics {
                         (array, i) -> accumulate(array, i, multiply),
                         (left, right) -> combine(left, right, multiply)
                 );
-        return results[0].multiply(results[1]).multiply(results[2]);
+        return multiply.apply(multiply.apply(results[0], results[1]), results[2]);
     }
 
     static class MultiplicationWatcher {
