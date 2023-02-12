@@ -17,8 +17,8 @@ public class ParallelStream_09_EfficientMultiplicationFriendly {
     public static final int TOM_COOK_THRESHOLD_IN_BITS = 7680;
 
     /*
-                This is my first sequential solution for multiplying all factors of factorial in a karatsuba-friendly way.
-             */
+        This is my first sequential solution for multiplying all factors of factorial in a karatsuba-friendly way.
+     */
     BigInteger factorial(int n) {
         BigInteger result = ONE;
         List<BigInteger> results = new ArrayList<>();
@@ -118,11 +118,7 @@ public class ParallelStream_09_EfficientMultiplicationFriendly {
     }
 
     static void accumulate2(BigInteger[] result, BigInteger i, BinaryOperator<BigInteger> multiply) {
-        if (KARATSUBA_THRESHOLD_IN_BITS <= result[0].bitLength()) {
-            result[1] = result[1].multiply(i);
-        } else {
-            result[0] = result[0].multiply(i);
-        }
+        result[1] = result[1].multiply(i);
         if (KARATSUBA_THRESHOLD_IN_BITS <= result[1].bitLength()) {
             result[0] = multiply.apply(result[0], result[1]);
             result[1] = ONE;
@@ -161,11 +157,7 @@ public class ParallelStream_09_EfficientMultiplicationFriendly {
             if (length <= minLength) {
                 BigInteger[] result = new BigInteger[] {ONE, ONE};
                 for (int i = start; i < end; i++) {
-                    if (KARATSUBA_THRESHOLD_IN_BITS <= result[0].bitLength()) {
-                        result[1] = result[1].multiply(BigInteger.valueOf(i));
-                    } else {
-                        result[0] = result[0].multiply(BigInteger.valueOf(i));
-                    }
+                    result[1] = result[1].multiply(BigInteger.valueOf(i));
                     if (KARATSUBA_THRESHOLD_IN_BITS <= result[1].bitLength()) {
                         result[0] = multiply.apply(result[0], result[1]);
                         result[1] = ONE;
@@ -204,11 +196,7 @@ public class ParallelStream_09_EfficientMultiplicationFriendly {
     }
 
     public static void accumulate(BigInteger[] result, BigInteger i, BinaryOperator<BigInteger> multiply) {
-        if (KARATSUBA_THRESHOLD_IN_BITS <= result[1].bitLength()) {
-            result[2] = result[2].multiply(i);
-        } else {
-            result[1] = result[1].multiply(i);
-        }
+        result[2] = result[2].multiply(i);
         if (KARATSUBA_THRESHOLD_IN_BITS <= result[2].bitLength()) {
             result[1] = multiply.apply(result[1], result[2]);
             result[2] = ONE;
@@ -269,8 +257,12 @@ public class ParallelStream_09_EfficientMultiplicationFriendly {
     }
 
     public static BigInteger tomCookKaratsubaFactorialForkJoinPool(int n, BinaryOperator<BigInteger> multiply) {
-        // 7000 turned out ot be the best for max Karatsuba and TomCook multiplication
+        // Benchmark_21_TomCookKaratsubaFJP implies value 2000 is a good min length
+        return tomCookKaratsubaFactorialForkJoinPool(n, multiply, 2000);
+    }
+
+    public static BigInteger tomCookKaratsubaFactorialForkJoinPool(int n, BinaryOperator<BigInteger> multiply, int minLength) {
         return ForkJoinPool.commonPool()
-                .invoke(new TomCookKaratsubaFactorialTask(1, n + 1, 7000, multiply));
+                .invoke(new TomCookKaratsubaFactorialTask(1, n + 1, minLength, multiply));
     }
 }
