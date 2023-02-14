@@ -24,14 +24,14 @@ import static net.mirwaldt.streams.ParallelStream_09_EfficientMultiplicationFrie
 public class Benchmark_11_ParallelFactorial {
     /*
 Benchmark                                                                                 Mode  Cnt   Score   Error  Units
-Benchmark_11_ParallelFactorial.factorialParallelInForkJoinPoolParallelMultiply            avgt   25  16.637 ± 0.052  ms/op
-Benchmark_11_ParallelFactorial.factorialParallelInForkJoinPoolSequentialMultiply          avgt   25  29.383 ± 0.384  ms/op
-Benchmark_11_ParallelFactorial.factorialParallelStreamParallelMultiply                    avgt   25  39.208 ± 0.041  ms/op
-Benchmark_11_ParallelFactorial.factorialParallelStreamSequentialMultiply                  avgt   25  53.686 ± 0.148  ms/op
-Benchmark_11_ParallelFactorial.tomCookKaratsubaFactorialForkJoinPoolParallelMultiply      avgt   25  17.594 ± 0.030  ms/op
-Benchmark_11_ParallelFactorial.tomCookKaratsubaFactorialForkJoinPoolSequentialMultiply    avgt   25  30.662 ± 0.284  ms/op
-Benchmark_11_ParallelFactorial.tomCookKaratsubaFactorialParallelStreamParallelMultiply    avgt   25  18.902 ± 0.028  ms/op
-Benchmark_11_ParallelFactorial.tomCookKaratsubaFactorialParallelStreamSequentialMultiply  avgt   25  32.859 ± 0.134  ms/op
+Benchmark_11_ParallelFactorial.factorialParallelInForkJoinPoolParallelMultiply            avgt   25  16.553 ± 0.039  ms/op
+Benchmark_11_ParallelFactorial.factorialParallelInForkJoinPoolSequentialMultiply          avgt   25  29.527 ± 0.371  ms/op
+Benchmark_11_ParallelFactorial.factorialParallelStreamParallelMultiply                    avgt   25  39.061 ± 0.045  ms/op
+Benchmark_11_ParallelFactorial.factorialParallelStreamSequentialMultiply                  avgt   25  53.479 ± 0.228  ms/op
+Benchmark_11_ParallelFactorial.tomCookKaratsubaFactorialForkJoinPoolParallelMultiply      avgt   25  23.045 ± 0.021  ms/op
+Benchmark_11_ParallelFactorial.tomCookKaratsubaFactorialForkJoinPoolSequentialMultiply    avgt   25  36.272 ± 0.310  ms/op
+Benchmark_11_ParallelFactorial.tomCookKaratsubaFactorialParallelStreamParallelMultiply    avgt   25  18.838 ± 0.045  ms/op
+Benchmark_11_ParallelFactorial.tomCookKaratsubaFactorialParallelStreamSequentialMultiply  avgt   25  32.840 ± 0.122  ms/op
 
 
 Saturation can be measured in bash by:
