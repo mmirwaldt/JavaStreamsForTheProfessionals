@@ -257,8 +257,9 @@ public class ParallelStream_09_EfficientMultiplicationFriendly {
     }
 
     public static BigInteger tomCookKaratsubaFactorialForkJoinPool(int n, BinaryOperator<BigInteger> multiply) {
-        // Benchmark_21_TomCookKaratsubaFJP implies value 2000 is a good min length
-        return tomCookKaratsubaFactorialForkJoinPool(n, multiply, 2000);
+        // leads to 512 Karatsuba multiplications and 188 Tom-Cook multiplications
+        // this is 572/591=97% Karatsuba multiplications and 188/196=96% Tom-Cook multiplications
+        return tomCookKaratsubaFactorialForkJoinPool(n, multiply, 7000);
     }
 
     public static BigInteger tomCookKaratsubaFactorialForkJoinPool(int n, BinaryOperator<BigInteger> multiply, int minLength) {
