@@ -68,7 +68,7 @@ Benchmark_22_ForkJoinPoolFactorial.factorialParallelInForkJoinPoolSequentialMult
             int length = end - start;
             if (length <= minLength) {
                 BigInteger result = BigInteger.valueOf(start);
-                for (int i = start + 1; i < end; i++) { result = result.multiply(BigInteger.valueOf(i)); }
+                for (int i = start + 1; i < end; i++) { result = multiply.apply(result, BigInteger.valueOf(i)); }
                 return result;
             } else {
                 int halfLength = length / 2;
