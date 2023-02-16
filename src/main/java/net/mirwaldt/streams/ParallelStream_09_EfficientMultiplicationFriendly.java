@@ -192,7 +192,7 @@ public class ParallelStream_09_EfficientMultiplicationFriendly {
                         (array, i) -> accumulate(array, i, multiply),
                         (left, right) -> combine(left, right, multiply)
                 );
-        return results[0].multiply(results[1]).multiply(results[2]);
+        return multiply.apply(results[0], multiply.apply(results[1], results[2]));
     }
 
     public static void accumulate(BigInteger[] result, BigInteger i, BinaryOperator<BigInteger> multiply) {
@@ -215,6 +215,29 @@ public class ParallelStream_09_EfficientMultiplicationFriendly {
                 .orElse(ONE);
         left[1] = ONE;
         left[2] = ONE;
+    }
+
+    public static void combine4(BigInteger[] left, BigInteger[] right, BinaryOperator<BigInteger> multiply) {
+        left[0] = Stream.of(left[0], left[1], left[2], right[0], right[1], right[2])
+                .parallel()
+                .reduce(multiply)
+                .orElse(ONE);
+        left[1] = ONE;
+        left[2] = ONE;
+    }
+
+    public static void combine3(BigInteger[] leftResult, BigInteger[] rightResult, BinaryOperator<BigInteger> multiply) {
+        leftResult[2] = multiply.apply(leftResult[2], rightResult[2]);
+        if(KARATSUBA_THRESHOLD_IN_BITS <= leftResult[2].bitLength()) {
+            leftResult[1] = multiply.apply(leftResult[1], leftResult[2]);
+            leftResult[2] = ONE;
+        }
+        leftResult[1] = multiply.apply(leftResult[1], rightResult[1]);
+        if(TOM_COOK_THRESHOLD_IN_BITS <= leftResult[1].bitLength()) {
+            leftResult[0] = multiply.apply(leftResult[0], leftResult[1]);
+            leftResult[1] = ONE;
+        }
+        leftResult[0] = multiply.apply(leftResult[0], rightResult[0]);
     }
 
     /*
