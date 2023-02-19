@@ -9,6 +9,7 @@ import static net.mirwaldt.streams.benchmarks.Benchmark_11_ParallelFactorial.fac
 import static net.mirwaldt.streams.benchmarks.Benchmark_11_ParallelFactorial.factorialParallelStream;
 import static net.mirwaldt.streams.experimental.Benchmark_22_ForkJoinPoolFactorial.factorialParallelInForkJoinPoolMinLength;
 import static net.mirwaldt.streams.experimental.Benchmark_23_BestSplitStrategy.factorialCompletableFutureSequentialMultiply;
+import static net.mirwaldt.streams.experimental.Benchmark_24_PerfectSplitStrategy.perfectTomCookKaratsubaFactorialForkJoinPool;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
 public class BenchmarkTest_11_ParallelFactorial {
@@ -26,6 +27,7 @@ public class BenchmarkTest_11_ParallelFactorial {
         assertEquals(FACTORIAL_OF_5, tomCookKaratsubaFactorialParallelStream(5, BigInteger::multiply));
         assertEquals(FACTORIAL_OF_5, tomCookKaratsubaFactorialForkJoinPool(5, BigInteger::multiply));
         assertEquals(FACTORIAL_OF_5, factorialCompletableFutureSequentialMultiply(5, BigInteger::multiply));
+        assertEquals(FACTORIAL_OF_5, perfectTomCookKaratsubaFactorialForkJoinPool(5, BigInteger::multiply));
     }
 
     @Test
@@ -38,6 +40,7 @@ public class BenchmarkTest_11_ParallelFactorial {
         assertEquals(FACTORIAL_OF_50, tomCookKaratsubaFactorialParallelStream(50, BigInteger::multiply));
         assertEquals(FACTORIAL_OF_50, tomCookKaratsubaFactorialForkJoinPool(50, BigInteger::multiply));
         assertEquals(FACTORIAL_OF_50, factorialCompletableFutureSequentialMultiply(50, BigInteger::multiply));
+        assertEquals(FACTORIAL_OF_50, perfectTomCookKaratsubaFactorialForkJoinPool(50, BigInteger::multiply));
     }
 
     @Test
@@ -51,7 +54,7 @@ public class BenchmarkTest_11_ParallelFactorial {
         assertEquals(expected, tomCookKaratsubaFactorialParallelStream(1000, BigInteger::multiply));
         assertEquals(expected, tomCookKaratsubaFactorialForkJoinPool(1000, BigInteger::multiply));
         assertEquals(expected, factorialCompletableFutureSequentialMultiply(1000, BigInteger::multiply));
-
+        assertEquals(expected, perfectTomCookKaratsubaFactorialForkJoinPool(1000, BigInteger::multiply));
     }
 
     @Test
@@ -65,6 +68,7 @@ public class BenchmarkTest_11_ParallelFactorial {
         assertEquals(expected, tomCookKaratsubaFactorialParallelStream(1200, BigInteger::multiply));
         assertEquals(expected, tomCookKaratsubaFactorialForkJoinPool(1200, BigInteger::multiply));
         assertEquals(expected, factorialCompletableFutureSequentialMultiply(1200, BigInteger::multiply));
+        assertEquals(expected, perfectTomCookKaratsubaFactorialForkJoinPool(1200, BigInteger::multiply));
     }
 
     @Test
@@ -77,6 +81,7 @@ public class BenchmarkTest_11_ParallelFactorial {
         assertEquals(expected, tomCookKaratsubaFactorialParallelStream(10000, BigInteger::multiply));
         assertEquals(expected, tomCookKaratsubaFactorialForkJoinPool(10000, BigInteger::multiply));
         assertEquals(expected, factorialCompletableFutureSequentialMultiply(10000, BigInteger::multiply));
+        assertEquals(expected, perfectTomCookKaratsubaFactorialForkJoinPool(10000, BigInteger::multiply));
     }
 
     @Test
@@ -89,5 +94,6 @@ public class BenchmarkTest_11_ParallelFactorial {
         assertEquals(expected, tomCookKaratsubaFactorialParallelStream(100000, BigInteger::multiply));
         assertEquals(expected, tomCookKaratsubaFactorialForkJoinPool(100000, BigInteger::multiply));
         assertEquals(expected, factorialCompletableFutureSequentialMultiply(100000, BigInteger::multiply));
+        assertEquals(expected, perfectTomCookKaratsubaFactorialForkJoinPool(100000, BigInteger::multiply));
     }
 }

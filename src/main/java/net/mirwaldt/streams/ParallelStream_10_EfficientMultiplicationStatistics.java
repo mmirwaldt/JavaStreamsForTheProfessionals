@@ -8,6 +8,7 @@ import static net.mirwaldt.streams.ParallelStream_09_EfficientMultiplicationFrie
 import static net.mirwaldt.streams.benchmarks.Benchmark_11_ParallelFactorial.factorialParallelStream;
 import static net.mirwaldt.streams.experimental.Benchmark_22_ForkJoinPoolFactorial.factorialParallelInForkJoinPoolMinLength;
 import static net.mirwaldt.streams.experimental.Benchmark_23_BestSplitStrategy.factorialCompletableFutureSequentialMultiply;
+import static net.mirwaldt.streams.experimental.Benchmark_24_PerfectSplitStrategy.perfectTomCookKaratsubaFactorialForkJoinPool;
 
 /*
 Output:
@@ -92,6 +93,14 @@ public class ParallelStream_10_EfficientMultiplicationStatistics {
         System.out.println("\t\tResult in bits: " + result.bitLength());
         System.out.println("\t\tKaratsuba multiplications: " + watcher.karatsubaCount());
         System.out.println("\t\tTomCook multiplications: " + watcher.tomCookCount());
+
+        watcher = new MultiplicationWatcher();
+        result = perfectTomCookKaratsubaFactorialForkJoinPool(100_000, watcher::multiplyAndWatch);
+        System.out.println("\tperfectTomCookKaratsubaFactorialForkJoinPool:");
+        System.out.println("\t\tResult in bits: " + result.bitLength());
+        System.out.println("\t\tKaratsuba multiplications: " + watcher.karatsubaCount());
+        System.out.println("\t\tTomCook multiplications: " + watcher.tomCookCount());
+
     }
 
     static class MultiplicationWatcher {
