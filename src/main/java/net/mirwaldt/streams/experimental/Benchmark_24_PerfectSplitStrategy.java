@@ -7,8 +7,7 @@ import org.openjdk.jmh.runner.options.Options;
 import org.openjdk.jmh.runner.options.OptionsBuilder;
 
 import java.math.BigInteger;
-import java.util.ArrayList;
-import java.util.List;
+import java.util.*;
 import java.util.concurrent.ForkJoinPool;
 import java.util.concurrent.RecursiveTask;
 import java.util.concurrent.TimeUnit;
@@ -41,48 +40,56 @@ import static net.mirwaldt.streams.ParallelStream_09_EfficientMultiplicationFrie
 public class Benchmark_24_PerfectSplitStrategy {
 
     /*
-    Benchmark                                                                       Mode  Cnt   Score   Error  Units
-    Benchmark_24_PerfectSplitStrategy.perfectTomCookKaratsubaFactorialForkJoinPool  avgt   25  16.554 ± 0.013  ms/op
+Benchmark                                                                       Mode  Cnt   Score   Error  Units
+Benchmark_24_PerfectSplitStrategy.perfectTomCookKaratsubaFactorialForkJoinPool  avgt   25  16.494 ± 0.059  ms/op
      */
     int N = 100_000;
 
-    int[] splits = splits(N);
+    int[] factors = factors(N, 1002); // seed 1002 ensures latest group of factors grows to Karatsuba threshold
+    int[] splits = splits(N, factors);
 
     @Benchmark
     public BigInteger perfectTomCookKaratsubaFactorialForkJoinPool() {
-        return perfectTomCookKaratsubaFactorialForkJoinPool(splits, BigInteger::parallelMultiply);
+        return perfectTomCookKaratsubaFactorialForkJoinPool(factors, splits, BigInteger::parallelMultiply);
     }
 
     public static BigInteger perfectTomCookKaratsubaFactorialForkJoinPool(int n, BinaryOperator<BigInteger> multiply) {
-        int[] splits = splits(n);
-        return ForkJoinPool.commonPool().invoke(new TomCookKaratsubaFactorialTask(splits, multiply));
+        int[] factors = factors(n, 1002);
+        int[] splits = splits(n, factors);
+        return ForkJoinPool.commonPool().invoke(new TomCookKaratsubaFactorialTask(factors, splits, multiply));
     }
 
     public static BigInteger perfectTomCookKaratsubaFactorialForkJoinPool(
-            int[] splits, BinaryOperator<BigInteger> multiply) {
-        return ForkJoinPool.commonPool().invoke(new TomCookKaratsubaFactorialTask(splits, multiply));
+            int[] factors, int[] splits, BinaryOperator<BigInteger> multiply) {
+        return ForkJoinPool.commonPool().invoke(new TomCookKaratsubaFactorialTask(factors, splits, multiply));
     }
 
-    static int[] splits(int n) {
-//        int additionalBits = 0;
+    static int[] splits(int n, int[] factors) {
         List<Integer> result = new ArrayList<>();
         BigInteger bigInt = ONE;
-        int i = 2;
-        for (; i <= n; i++) {
-            bigInt = bigInt.multiply(BigInteger.valueOf(i));
+        int i = 0;
+        for (; i < n; i++) {
+            int j = factors[i];
+            bigInt = bigInt.multiply(BigInteger.valueOf(j));
             if (KARATSUBA_THRESHOLD_IN_BITS <= bigInt.bitLength()) {
-//                System.out.println(bigInt.bitLength());
-//                additionalBits += bigInt.bitLength() - KARATSUBA_THRESHOLD_IN_BITS;
                 result.add(i + 1); // + 1 for exclusive ends and inclusive starts
                 bigInt = ONE;
             }
         }
-        if (result.isEmpty() || result.get(result.size() - 1) < n + 1) {
-//            System.out.println(bigInt.bitLength());
-            result.add(n + 1);
+        if (result.isEmpty() || result.get(result.size() - 1) < n) {
+            result.add(n);
         }
-//        System.out.println(additionalBits); // 4305 > 2560 (one Karatsuba number) => 1745 bits too many
         return result.stream().mapToInt(j -> j).toArray();
+    }
+
+    static int[] factors(int n, int seed) { // use a randomized array of ints to reduce the waste of bits
+        Random random = new Random(seed);
+        List<Integer> factors = new ArrayList<>();
+        for (int i = 1; i <= n; i++) {
+            factors.add(i);
+        }
+        Collections.shuffle(factors, random);
+        return factors.stream().mapToInt(j -> j).toArray();
     }
 
     /*
@@ -98,25 +105,29 @@ public class Benchmark_24_PerfectSplitStrategy {
         private final int end;
         private final int splitStart;
         private final int splitEnd;
+        private final int[] karatsubaFactors;
         private final int[] karatsubaSplits;
         private final BinaryOperator<BigInteger> multiply;
 
-        public TomCookKaratsubaFactorialTask(int[] karatsubaSplits, BinaryOperator<BigInteger> multiply) {
-            this(-1, -2, 0, karatsubaSplits.length, karatsubaSplits, multiply);
+        public TomCookKaratsubaFactorialTask(
+                int[] karatsubaFactors, int[] karatsubaSplits, BinaryOperator<BigInteger> multiply) {
+            this(karatsubaFactors, -1, -2, 0, karatsubaSplits.length, karatsubaSplits, multiply);
         }
 
         private TomCookKaratsubaFactorialTask(
-                int splitStart, int splitEnd, int[] karatsubaSplits, BinaryOperator<BigInteger> multiply) {
-            this(-1, -2, splitStart, splitEnd, karatsubaSplits, multiply);
+                int[] karatsubaFactors, int splitStart, int splitEnd, int[] karatsubaSplits, BinaryOperator<BigInteger> multiply) {
+            this(karatsubaFactors, -1, -2, splitStart, splitEnd, karatsubaSplits, multiply);
         }
 
         private TomCookKaratsubaFactorialTask(
-                int start, int end, BinaryOperator<BigInteger> multiply) {
-            this(start, end, -1, -1, null, multiply);
+                int[] karatsubaFactors, int start, int end, BinaryOperator<BigInteger> multiply) {
+            this(karatsubaFactors, start, end, -1, -1, null, multiply);
         }
 
         private TomCookKaratsubaFactorialTask(
-                int start, int end, int splitStart, int splitEnd, int[] karatsubaSplits, BinaryOperator<BigInteger> multiply) {
+                int[] karatsubaFactors, int start, int end, int splitStart, int splitEnd,
+                int[] karatsubaSplits, BinaryOperator<BigInteger> multiply) {
+            this.karatsubaFactors = karatsubaFactors;
             this.start = start;
             this.end = end;
             this.splitStart = splitStart;
@@ -129,35 +140,26 @@ public class Benchmark_24_PerfectSplitStrategy {
         protected BigInteger compute() {
             if (start == -1) {
                 int length = splitEnd - splitStart;
-                if (splitStart <= karatsubaSplits.length - 1 && karatsubaSplits.length - 1 < splitEnd){
-                    System.out.println();
-                }
                 if (length == 1 || karatsubaSplits.length == 1) { // for default multiplication
-                    int start = (0 < splitStart) ? karatsubaSplits[splitStart - 1] : 2;
+                    int start = (0 < splitStart) ? karatsubaSplits[splitStart - 1] : 0;
                     int end = karatsubaSplits[splitStart];
                     return calculateToKaratsuba(start, end);
-                } else if (length == 2) { // splits for Karatsuba-multiplications
-                    int leftStart = (0 < splitStart) ? karatsubaSplits[splitStart - 1] : 2;
-                    int leftEnd = karatsubaSplits[splitStart];
-                    int rightStart = leftEnd;
-                    int rightEnd = karatsubaSplits[splitStart + 1];
-                    return multiply.apply(calculateToKaratsuba(leftStart, leftEnd), calculateToKaratsuba(rightStart, rightEnd));
-                } else if (length % 3 == 0 && 6 <= length && length % 6 != 0) { // splits for Karatsuba-multiplications
+                }  else if (length % 3 == 0 && 6 <= length && length % 6 != 0) { // splits for Karatsuba-multiplications
                     int multipleOf6 = length - 3;
                     int leftLength = multipleOf6 / 2 + 3;
                     TomCookKaratsubaFactorialTask leftTask =
-                            new TomCookKaratsubaFactorialTask(splitStart, splitStart + leftLength, karatsubaSplits, multiply);
+                            new TomCookKaratsubaFactorialTask(karatsubaFactors, splitStart, splitStart + leftLength, karatsubaSplits, multiply);
                     leftTask.fork();
                     TomCookKaratsubaFactorialTask rightTask =
-                            new TomCookKaratsubaFactorialTask(splitStart + leftLength, splitEnd, karatsubaSplits, multiply);
+                            new TomCookKaratsubaFactorialTask(karatsubaFactors, splitStart + leftLength, splitEnd, karatsubaSplits, multiply);
                     return multiply.apply(rightTask.compute(), leftTask.join());
                 } else {
                     int halfLength = length >>> 1;
                     TomCookKaratsubaFactorialTask leftTask =
-                            new TomCookKaratsubaFactorialTask(splitStart, splitStart + halfLength, karatsubaSplits, multiply);
+                            new TomCookKaratsubaFactorialTask(karatsubaFactors, splitStart, splitStart + halfLength, karatsubaSplits, multiply);
                     leftTask.fork();
                     TomCookKaratsubaFactorialTask rightTask =
-                            new TomCookKaratsubaFactorialTask(splitStart + halfLength, splitEnd, karatsubaSplits, multiply);
+                            new TomCookKaratsubaFactorialTask(karatsubaFactors, splitStart + halfLength, splitEnd, karatsubaSplits, multiply);
                     return multiply.apply(rightTask.compute(), leftTask.join());
                 }
             } else {
@@ -168,16 +170,17 @@ public class Benchmark_24_PerfectSplitStrategy {
         private BigInteger calculateToKaratsuba(int start, int end) {
             int length = end - start;
             if (length == 1) {
-                return BigInteger.valueOf(start);
+                return BigInteger.valueOf(karatsubaFactors[start]);
             } else if (length == 2) {
-                return multiply.apply(BigInteger.valueOf(start), BigInteger.valueOf(start + 1));
+                return multiply.apply(BigInteger.valueOf(karatsubaFactors[start]),
+                        BigInteger.valueOf(karatsubaFactors[start + 1]));
             } else {
                 int halfLength = length >>> 1;
                 TomCookKaratsubaFactorialTask leftTask =
-                        new TomCookKaratsubaFactorialTask(start, start + halfLength, multiply);
+                        new TomCookKaratsubaFactorialTask(karatsubaFactors, start, start + halfLength, multiply);
                 leftTask.fork();
                 TomCookKaratsubaFactorialTask rightTask =
-                        new TomCookKaratsubaFactorialTask(start + halfLength, end, multiply);
+                        new TomCookKaratsubaFactorialTask(karatsubaFactors, start + halfLength, end, multiply);
                 return multiply.apply(rightTask.compute(), leftTask.join());
             }
         }
