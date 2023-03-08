@@ -391,16 +391,9 @@ public class Benchmark_25_PrimeFactorization {
         }
 
         private BigInteger calculateForRemaining(int remainder) {
-            PrimeFactorizationFactorialTask leftTask;
-            if(4 <= remainingExponents && remainingExponents % 2 == 0) {
-                leftTask = new PrimeFactorizationFactorialTask(
-                        n, startPrime, primes, prime, approximators, remainingExponents / 4, multiply, powers, exponents);
-                remainingExponents -= 2 * (remainingExponents / 4);
-            } else {
-                leftTask = new PrimeFactorizationFactorialTask(
-                        n, startPrime, primes, prime, approximators, (remainingExponents - remainder) / 3, multiply, powers, exponents);
-                remainingExponents -= 2 * (remainingExponents - remainder) / 3;
-            }
+            PrimeFactorizationFactorialTask leftTask = new PrimeFactorizationFactorialTask(
+                    n, startPrime, primes, prime, approximators, (remainingExponents - remainder) / 3, multiply, powers, exponents);
+            remainingExponents -= 2 * (remainingExponents - remainder) / 3;
             leftTask.fork();
             if (2 <= remainingExponents) {
                 PrimeFactorizationFactorialTask rightTask = new PrimeFactorizationFactorialTask(
