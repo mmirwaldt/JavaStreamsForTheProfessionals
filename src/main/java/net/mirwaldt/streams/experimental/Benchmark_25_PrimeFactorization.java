@@ -339,6 +339,8 @@ public class Benchmark_25_PrimeFactorization {
                 }
                 if (powerRange.length() == 1) {
                     return prime;
+                } else if(powerRange.length() == 2) {
+                    return powerRange.power(2, () -> multiply.apply(prime, prime));
                 } else {
                     PowerRange leftPowerRange = new PowerRange(
                             powerRange.startExponent(), powerRange.startExponent() + powerRange.length() / 2, powerRange.prime(), powerRange.powers());
