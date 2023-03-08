@@ -246,48 +246,19 @@ public class Benchmark_25_PrimeFactorization {
         }
 
         private BigInteger splitByPrimes(int length) {
-            if (n / 2 < primeRange.firstPrime()) {
-                BigInteger[] results =  primeRange.primes()
-                        .subList(primeRange.startPrime(), primeRange.endPrime())
-                        .parallelStream()
-                        .map(BigInteger::valueOf)
-                        .collect(() -> new BigInteger[]{ONE, ONE, ONE},
-                                (array, prime) -> accumulate(array, prime, multiply),
-                                (left, right) -> combine(left, right, multiply));
-                BigInteger result = multiply.apply(results[0], multiply.apply(results[1], results[2]));
-                return (initialValue.equals(ONE)) ? result : multiply.apply(initialValue, result);
-            } else if(n / 2 < primeRange.lastPrime()) {
-                int index = Collections.binarySearch(primeRange.primes(), n / 2 + 1);
-                if(index < 0) {
-                    index = -(index) - 1;
-                }
-                assert 0 < index;
-                assert index < primeRange.endPrime();
-                PrimeRange leftRange = new PrimeRange(0, index, primeRange.primes());
-                PrimeFactorizationFactorialTask leftTask = new PrimeFactorizationFactorialTask(
-                        n, leftRange, approximators, multiply);
-                leftTask.fork();
-                PrimeRange rightRange = new PrimeRange(
-                        index, primeRange.endPrime(), primeRange.primes());
-                PrimeFactorizationFactorialTask rightTask = new PrimeFactorizationFactorialTask(
-                        n, rightRange, approximators, multiply);
-                BigInteger result = multiply.apply(rightTask.compute(), leftTask.join());
-                return (initialValue.equals(ONE)) ? result : multiply.apply(initialValue, result);
-            } else {
-                int halfLength = length / 2;
-                assert 0 < halfLength;
-                PrimeRange leftRange = new PrimeRange(
-                        primeRange.startPrime(), primeRange.startPrime() + halfLength, primeRange.primes());
-                PrimeFactorizationFactorialTask leftTask = new PrimeFactorizationFactorialTask(
-                        n, leftRange, approximators, multiply);
-                leftTask.fork();
-                PrimeRange rightRange = new PrimeRange(
-                        primeRange.startPrime() + halfLength, primeRange.endPrime(), primeRange.primes());
-                PrimeFactorizationFactorialTask rightTask = new PrimeFactorizationFactorialTask(
-                        n, rightRange, approximators, multiply);
-                BigInteger result = multiply.apply(rightTask.compute(), leftTask.join());
-                return (initialValue.equals(ONE)) ? result : multiply.apply(initialValue, result);
-            }
+            int halfLength = length / 2;
+            assert 0 < halfLength;
+            PrimeRange leftRange = new PrimeRange(
+                    primeRange.startPrime(), primeRange.startPrime() + halfLength, primeRange.primes());
+            PrimeFactorizationFactorialTask leftTask = new PrimeFactorizationFactorialTask(
+                    n, leftRange, approximators, multiply);
+            leftTask.fork();
+            PrimeRange rightRange = new PrimeRange(
+                    primeRange.startPrime() + halfLength, primeRange.endPrime(), primeRange.primes());
+            PrimeFactorizationFactorialTask rightTask = new PrimeFactorizationFactorialTask(
+                    n, rightRange, approximators, multiply);
+            BigInteger result = multiply.apply(rightTask.compute(), leftTask.join());
+            return (initialValue.equals(ONE)) ? result : multiply.apply(initialValue, result);
         }
 
         private void initPowerRange() {
