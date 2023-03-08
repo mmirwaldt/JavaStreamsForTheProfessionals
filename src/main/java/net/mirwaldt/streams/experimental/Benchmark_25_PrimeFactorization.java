@@ -83,7 +83,7 @@ public class Benchmark_25_PrimeFactorization {
         for (int i = 2; i <= maxLog; i++) {
             approximators[i] = new NGroupsFactorialApproximator(i);
         }
-        List<Integer> primes = IntStream.rangeClosed(2, n)
+        List<Integer> primes = IntStream.rangeClosed(3, n)
                 .filter(primeSource::isPrime)
                 .boxed()
                 .toList();
@@ -375,7 +375,7 @@ public class Benchmark_25_PrimeFactorization {
                         n, rightRange, approximators, multiply);
                 BigInteger result = multiply.apply(rightTask.compute(), leftTask.join());
 //                    System.out.println(this + " : " + result);
-                return result;
+                return (initialValue.equals(ONE)) ? result : multiply.apply(initialValue, result);
             }
         }
 
