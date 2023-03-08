@@ -155,7 +155,7 @@ public class ParallelStream_09_EfficientMultiplicationFriendly {
         protected BigInteger compute() {
             int length = end - start;
             if (length <= minLength) {
-                BigInteger[] result = new BigInteger[] {ONE, ONE};
+                BigInteger[] result = new BigInteger[]{ONE, ONE};
                 for (int i = start; i < end; i++) {
                     result[1] = result[1].multiply(BigInteger.valueOf(i));
                     if (KARATSUBA_THRESHOLD_IN_BITS <= result[1].bitLength()) {
@@ -176,7 +176,7 @@ public class ParallelStream_09_EfficientMultiplicationFriendly {
         }
     }
 
-    public static BigInteger karatsubaFactorialForkJoinPool(int n,BinaryOperator<BigInteger> multiply) {
+    public static BigInteger karatsubaFactorialForkJoinPool(int n, BinaryOperator<BigInteger> multiply) {
         return ForkJoinPool.commonPool()
                 .invoke(new KaratsubaFactorialTask(1, n + 1, 1000, multiply));
     }
@@ -196,12 +196,12 @@ public class ParallelStream_09_EfficientMultiplicationFriendly {
     }
 
     public static void accumulate(BigInteger[] result, BigInteger i, BinaryOperator<BigInteger> multiply) {
-        result[2] = result[2].multiply(i);
+        result[2] = multiply.apply(result[2], i);
         if (KARATSUBA_THRESHOLD_IN_BITS <= result[2].bitLength()) {
             result[1] = multiply.apply(result[1], result[2]);
             result[2] = ONE;
         }
-        if(TOM_COOK_THRESHOLD_IN_BITS <= result[1].bitLength()) {
+        if (TOM_COOK_THRESHOLD_IN_BITS <= result[1].bitLength()) {
             result[0] = multiply.apply(result[0], result[1]);
             result[1] = ONE;
         }
@@ -228,12 +228,12 @@ public class ParallelStream_09_EfficientMultiplicationFriendly {
 
     public static void combine3(BigInteger[] leftResult, BigInteger[] rightResult, BinaryOperator<BigInteger> multiply) {
         leftResult[2] = multiply.apply(leftResult[2], rightResult[2]);
-        if(KARATSUBA_THRESHOLD_IN_BITS <= leftResult[2].bitLength()) {
+        if (KARATSUBA_THRESHOLD_IN_BITS <= leftResult[2].bitLength()) {
             leftResult[1] = multiply.apply(leftResult[1], leftResult[2]);
             leftResult[2] = ONE;
         }
         leftResult[1] = multiply.apply(leftResult[1], rightResult[1]);
-        if(TOM_COOK_THRESHOLD_IN_BITS <= leftResult[1].bitLength()) {
+        if (TOM_COOK_THRESHOLD_IN_BITS <= leftResult[1].bitLength()) {
             leftResult[0] = multiply.apply(leftResult[0], leftResult[1]);
             leftResult[1] = ONE;
         }
@@ -262,7 +262,7 @@ public class ParallelStream_09_EfficientMultiplicationFriendly {
         protected BigInteger compute() {
             int length = end - start;
             if (length <= minLength) {
-                BigInteger[] result = new BigInteger[] {ONE, ONE, ONE};
+                BigInteger[] result = new BigInteger[]{ONE, ONE, ONE};
                 for (int i = start; i < end; i++) {
                     accumulate(result, BigInteger.valueOf(i), multiply);
                 }

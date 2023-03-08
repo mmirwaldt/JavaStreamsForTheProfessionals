@@ -7,14 +7,18 @@ import org.openjdk.jmh.runner.options.Options;
 import org.openjdk.jmh.runner.options.OptionsBuilder;
 
 import java.math.BigInteger;
-import java.util.*;
+import java.util.List;
+import java.util.NavigableSet;
+import java.util.TreeSet;
+import java.util.concurrent.ForkJoinPool;
+import java.util.concurrent.RecursiveTask;
 import java.util.concurrent.TimeUnit;
 import java.util.function.BinaryOperator;
 import java.util.stream.IntStream;
 
+import static java.lang.Math.max;
 import static java.math.BigInteger.ONE;
 import static java.util.stream.Collectors.toCollection;
-import static java.util.stream.Collectors.toMap;
 import static net.mirwaldt.streams.ParallelStream_09_EfficientMultiplicationFriendly.accumulate;
 import static net.mirwaldt.streams.ParallelStream_09_EfficientMultiplicationFriendly.combine;
 
@@ -25,12 +29,14 @@ import static net.mirwaldt.streams.ParallelStream_09_EfficientMultiplicationFrie
 public class Benchmark_25_PrimeFactorization {
 
     /*
+# Warmup Iteration   1: 48.362 ms/op
 
      */
     int N = 100_000;
 
     DefaultPrimeSource primeSource = new DefaultPrimeSource();
-    SortedSet<Integer> primes;
+
+    List<Integer> primes;
 
     int maxLog = maxLog(N, 2);
     FactorialApproximator[] approximators = new FactorialApproximator[maxLog + 1];
@@ -39,7 +45,7 @@ public class Benchmark_25_PrimeFactorization {
 
     @Setup
     public void setup() {
-        approximators[0] = (n, prime) -> 1;
+        approximators[0] = (n, prime) -> 0;
         approximators[1] = (n, prime) -> 1;
         for (int i = 2; i <= maxLog; i++) {
             approximators[i] = new NGroupsFactorialApproximator(i);
@@ -47,7 +53,11 @@ public class Benchmark_25_PrimeFactorization {
         primes = IntStream.rangeClosed(2, N)
                 .filter(primeSource::isPrime)
                 .boxed()
-                .collect(toCollection(TreeSet::new));
+                .toList();
+//        primes = IntStream.rangeClosed(2, N)
+//                .filter(primeSource::isPrime)
+//                .boxed()
+//                .collect(toCollection(TreeSet::new));
 //        primeFactorization = primes.stream()
 //                .parallel()
 //                .unordered()
@@ -55,23 +65,80 @@ public class Benchmark_25_PrimeFactorization {
 //        System.out.println("Setup");
     }
 
+//    @Benchmark
+//    public BigInteger primeFactorization() {
+//        return primeFactorization(N, primes, approximators, BigInteger::parallelMultiply);
+//    }
+
     @Benchmark
-    public BigInteger primeFactorization() {
-        return primeFactorization(N, primes, approximators, BigInteger::parallelMultiply);
+    public BigInteger primeFactorizationInFJP() {
+        return primeFactorizationInFJP(new PrimeFactorizationFactorialTask(N, primes, approximators, BigInteger::parallelMultiply));
+    }
+
+    public static BigInteger primeFactorizationInFJP(int n, BinaryOperator<BigInteger> multiply) {
+        DefaultPrimeSource primeSource = new DefaultPrimeSource();
+        int maxLog = maxLog(n, 2);
+        FactorialApproximator[] approximators = new FactorialApproximator[maxLog + 1];
+        approximators[0] = (m, prime) -> 0;
+        approximators[1] = (m, prime) -> 1;
+        for (int i = 2; i <= maxLog; i++) {
+            approximators[i] = new NGroupsFactorialApproximator(i);
+        }
+        List<Integer> primes = IntStream.rangeClosed(2, n)
+                .filter(primeSource::isPrime)
+                .boxed()
+                .toList();
+
+//        long start = System.currentTimeMillis();
+        BigInteger result = primeFactorizationInFJP(new PrimeFactorizationFactorialTask(n, primes, approximators, multiply));
+//        long end = System.currentTimeMillis();
+//        System.out.println(n + " : " + result.bitLength() + " after " + (end - start) + "ms");
+        return result;
+    }
+
+    public static BigInteger primeFactorizationInFJP(PrimeFactorizationFactorialTask factorizationFactorialTask) {
+        return ForkJoinPool.commonPool().invoke(factorizationFactorialTask);
     }
 
 //    @Benchmark
-//    public Map<Integer, Long> primeFactorizationAloneParallel() {
+//    public Map<Integer, Long> primeFactorizationParallel1() {
 //        return primes.stream()
+//                .filter(i -> i * 2 <= N)
 //                .parallel()
-//                .unordered()
-//                .collect(toMap(p -> p, p -> approximate(N, approximators, p)));
+//                .collect(toMap(p -> p, p -> approximate(N, approximators, p), (l, r) -> l, TreeMap::new));
 //    }
-
+//
 //    @Benchmark
-//    public Map<Integer, Long> primeFactorizationAloneSequential() {
+//    public Map<Integer, Long> primeFactorizationSequential1() {
 //        return primes.stream()
-//                .collect(toMap(p -> p, p -> approximate(N, approximators, p)));
+//                .filter(i -> i * 2 <= N)
+//                .collect(toMap(p -> p, p -> approximate(N, approximators, p), (l, r) -> l, TreeMap::new));
+//    }
+//
+//
+//    @Benchmark
+//    public Map<Integer, Long> primeFactorizationParallel2() {
+//        NavigableMap<Integer, Long> primeFactorization = primes.stream()
+//                .filter(i -> i * 2 <= N)
+//                .parallel()
+//                .collect(toMap(p -> p, p -> approximate(N, approximators, p), (l, r) -> l, TreeMap::new));
+//
+//        primes.stream()
+//                .filter(i -> N < 2 * i)
+//                .forEach(i -> primeFactorization.put(i, 1L));
+//        return primeFactorization;
+//    }
+//
+//    @Benchmark
+//    public Map<Integer, Long> primeFactorizationAloneSequential2() {
+//        NavigableMap<Integer, Long> primeFactorization = primes.stream()
+//                .filter(i -> i * 2 <= N)
+//                .collect(toMap(p -> p, p -> approximate(N, approximators, p), (l, r) -> l, TreeMap::new));
+//
+//        primes.stream()
+//                .filter(i -> N < 2 * i)
+//                .forEach(i -> primeFactorization.put(i, 1L));
+//        return primeFactorization;
 //    }
 
 //    @Benchmark
@@ -83,7 +150,7 @@ public class Benchmark_25_PrimeFactorization {
 
     public static BigInteger primeFactorization(int n, BinaryOperator<BigInteger> multiply) {
         DefaultPrimeSource primeSource = new DefaultPrimeSource();
-        SortedSet<Integer> primes = IntStream.rangeClosed(2, n)
+        NavigableSet<Integer> primes = IntStream.rangeClosed(3, n)
                 .filter(primeSource::isPrime)
                 .boxed()
                 .collect(toCollection(TreeSet::new));
@@ -99,48 +166,27 @@ public class Benchmark_25_PrimeFactorization {
     }
 
     public static BigInteger primeFactorization(
-            int n, SortedSet<Integer> primes, FactorialApproximator[] approximators, BinaryOperator<BigInteger> multiply) {
-        NavigableMap<Integer, Long> primeFactorization = primes.stream()
-                .filter(i -> i * 2 <= n)
-                .parallel()
-                .unordered()
-                .collect(toMap(p -> p, p -> approximate(n, approximators, p), (l, r) -> l, TreeMap::new));
-
-        primes.stream()
-                .filter(i -> n < 2 * i)
-                .forEach(i -> primeFactorization.put(i, 1L));
-//        System.out.println(primeFactorization);
-
-        Integer firstPrimeWithExponent1 = primeFactorization.entrySet().stream()
-                .filter(entry -> entry.getValue() == 1)
-                .map(Map.Entry::getKey)
-                .findFirst().orElseThrow(() -> new RuntimeException("No result available"));
-
-        BigInteger power2Result = ONE.shiftLeft(primeFactorization.remove(2).intValue());
-        BigInteger[] tailMapResults = primeFactorization
-                .tailMap(firstPrimeWithExponent1, true)
-                .keySet().stream()
-                .collect(() -> new BigInteger[]{power2Result, ONE, ONE}, // may not be parallel with power2Result as initial value
-                        (array, prime) -> accumulate(array, BigInteger.valueOf(prime), multiply),
-                        (left, right) -> combine(left, right, multiply));
-
-//        System.out.println(primeFactorization.values().size());
-//        System.out.println(primeFactorization.values().stream().mapToLong(i -> i).sum());
-//        System.out.println(primeFactorization.values().stream().filter(v -> v == 1).count());
-
-        BigInteger[] headMapResults = primeFactorization
-                .headMap(firstPrimeWithExponent1)
-                .entrySet().stream()
-                .parallel()
+            int n, NavigableSet<Integer> primes, FactorialApproximator[] approximators, BinaryOperator<BigInteger> multiply) {
+        long start = System.currentTimeMillis();
+        BigInteger power2Result = ONE.shiftLeft((int) approximate(n, approximators, 2));
+        BigInteger[] results = primes.parallelStream()
                 .collect(() -> new BigInteger[]{ONE, ONE, ONE},
-                        (array, entry) -> power6(entry.getKey(), entry.getValue(), array, multiply),
+                        (array, prime) -> power5(prime, approximate(n, approximators, prime), array, multiply),
                         (left, right) -> combine(left, right, multiply));
-        combine(headMapResults, tailMapResults, multiply);
-        return multiply.apply(headMapResults[0], multiply.apply(headMapResults[1], headMapResults[2]));
+        accumulate(results, power2Result, multiply);
+
+        BigInteger result = multiply.apply(results[0], multiply.apply(results[1], results[2]));
+        long end = System.currentTimeMillis();
+        System.out.println(n + " : " + result.bitLength() + " after " + (end - start) + "ms");
+        return result;
     }
 
     private static long approximate(int n, FactorialApproximator[] approximators, Integer p) {
-        return approximators[maxLog(n, p)].approximate(n, p);
+        if (p <= n / 2) {
+            return approximators[max(2, maxLog(n, p))].approximate(n, p);
+        } else {
+            return 1;
+        }
     }
 
     private static int maxLog(long n, long prime) {
@@ -199,49 +245,6 @@ public class Benchmark_25_PrimeFactorization {
         }
     }
 
-    private static void power4(long base, long exponent, BigInteger[] results, BinaryOperator<BigInteger> multiply) {
-        new PowerMethodObject(results, multiply).power(base, exponent);
-    }
-
-    static class PowerMethodObject {
-        private BigInteger[] finalResults;
-        private BinaryOperator<BigInteger> multiply;
-        private BigInteger[] intermediateResults;
-
-        public PowerMethodObject(BigInteger[] finalResults, BinaryOperator<BigInteger> multiply) {
-            this.finalResults = finalResults;
-            this.multiply = multiply;
-        }
-
-        public void power(long base, long exponent) {
-            int maxLog = maxLog(exponent, 2) - 1;
-            intermediateResults = new BigInteger[maxLog];
-            recursivePower(base, exponent);
-        }
-
-        public void recursivePower(long base, long exponent) {
-            BigInteger baseBigInt = BigInteger.valueOf(base);
-            BigInteger result = baseBigInt;
-            int i = 1;
-            int j = 0;
-            for (; 2L * i < exponent; i *= 2) {
-                if (intermediateResults[j] == null) {
-                    intermediateResults[j] = multiply.apply(result, result);
-                }
-                result = intermediateResults[j];
-                j++;
-            }
-            accumulate(finalResults, result, multiply);
-
-            long remaining = exponent - i;
-            if (2 <= remaining) {
-                recursivePower(base, remaining);
-            } else if (remaining == 1) {
-                accumulate(finalResults, baseBigInt, multiply);
-            }
-        }
-    }
-
     public static void power5(long base, long exponent, BigInteger[] finalResults, BinaryOperator<BigInteger> multiply) {
         int maxLog = maxLog(exponent, 2) - 1;
         BigInteger[] intermediateResults = new BigInteger[maxLog];
@@ -278,9 +281,193 @@ public class Benchmark_25_PrimeFactorization {
         }
     }
 
+    public static class PrimeFactorizationFactorialTask extends RecursiveTask<BigInteger> {
+        private FactorialApproximator[] approximators;
+
+        private final int n;
+        private final int startPrime;
+        private final int endPrime;
+
+        private BigInteger initialValue = ONE;
+        private long remainingExponents = -1;
+
+        private final List<Integer> primes;
+        private final BinaryOperator<BigInteger> multiply;
+
+        public PrimeFactorizationFactorialTask(
+                int n, List<Integer> primes, FactorialApproximator[] approximators, BinaryOperator<BigInteger> multiply) {
+            this.n = n;
+            this.primes = primes;
+            this.approximators = approximators;
+            this.initialValue = ONE.shiftLeft((int) approximate(n, approximators, 2));
+            this.startPrime = 0;
+            this.endPrime = primes.size();
+            this.multiply = multiply;
+        }
+
+        public PrimeFactorizationFactorialTask(
+                int n,
+                int startPrime,
+                int endPrime,
+                List<Integer> primes,
+                FactorialApproximator[] approximators,
+                BinaryOperator<BigInteger> multiply) {
+            this.n = n;
+            this.startPrime = startPrime;
+            this.endPrime = endPrime;
+            this.primes = primes;
+            this.approximators = approximators;
+            this.multiply = multiply;
+        }
+
+        public PrimeFactorizationFactorialTask(
+                int n,
+                int startPrime,
+                List<Integer> primes,
+                FactorialApproximator[] approximators,
+                long remainingExponents,
+                BinaryOperator<BigInteger> multiply) {
+            this.n = n;
+            this.startPrime = startPrime;
+            this.endPrime = startPrime + 1;
+            this.remainingExponents = remainingExponents;
+            this.primes = primes;
+            this.approximators = approximators;
+            this.multiply = multiply;
+        }
+
+        @Override
+        protected BigInteger compute() {
+            int length = endPrime - startPrime;
+            if (length == 1) {
+                if (remainingExponents == -1) {
+                    remainingExponents = approximate(n, approximators, primes.get(startPrime));
+                }
+                if (remainingExponents == 1) {
+//                    System.out.println(this +  " : " + primes.get(startPrime));
+                    return BigInteger.valueOf(primes.get(startPrime));
+//                } else if (remainingExponents == 2) {
+//                    BigInteger result = BigInteger.valueOf(primes.get(startPrime));
+//                    return multiply.apply(result, result);
+                } else if (remainingExponents % 3 == 0) {
+                    PrimeFactorizationFactorialTask leftTask = new PrimeFactorizationFactorialTask(
+                            n, startPrime, primes, approximators, remainingExponents / 3, multiply);
+                    remainingExponents -= 2 * remainingExponents / 3;
+                    leftTask.fork();
+                    return calculateForRemaining(leftTask);
+                } else if (4 <= remainingExponents && remainingExponents % 3 == 1) {
+                    PrimeFactorizationFactorialTask leftTask = new PrimeFactorizationFactorialTask(
+                            n, startPrime, primes, approximators, (remainingExponents - 1) / 3, multiply);
+                    remainingExponents -= 2 * (remainingExponents - 1) / 3;
+                    leftTask.fork();
+                    return calculateForRemaining(leftTask);
+                } else if (5 <= remainingExponents && remainingExponents % 3 == 2) {
+                    PrimeFactorizationFactorialTask leftTask = new PrimeFactorizationFactorialTask(
+                            n, startPrime, primes, approximators, (remainingExponents - 2) / 3, multiply);
+                    remainingExponents -= 2 * (remainingExponents - 2) / 3;
+                    leftTask.fork();
+                    return calculateForRemaining(leftTask);
+                } else {
+                    PrimeFactorizationFactorialTask leftTask = new PrimeFactorizationFactorialTask(
+                            n, startPrime, primes, approximators, remainingExponents / 2, multiply);
+                    remainingExponents -= remainingExponents / 2;
+                    leftTask.fork();
+                    PrimeFactorizationFactorialTask rightTask = new PrimeFactorizationFactorialTask(
+                            n, startPrime, primes, approximators, remainingExponents, multiply);
+                    BigInteger result = multiply.apply(rightTask.compute(), leftTask.join());
+//                        System.out.println(this + " : " + result);
+                    return result;
+                }
+            } else {
+                int halfLength = length / 2;
+                PrimeFactorizationFactorialTask leftTask = new PrimeFactorizationFactorialTask(
+                        n, startPrime, startPrime + halfLength, primes, approximators, multiply);
+                leftTask.fork();
+                PrimeFactorizationFactorialTask rightTask = new PrimeFactorizationFactorialTask(
+                        n, startPrime + halfLength, endPrime, primes, approximators, multiply);
+                BigInteger result = multiply.apply(rightTask.compute(), leftTask.join());
+//                System.out.println(this + " : " + result);
+                return result;
+            }
+        }
+
+        private BigInteger calculateForRemaining(PrimeFactorizationFactorialTask leftTask) {
+            if(2 <= remainingExponents && remainingExponents % 2 == 0) {
+                PrimeFactorizationFactorialTask rightTask = new PrimeFactorizationFactorialTask(
+                        n, startPrime, primes, approximators, remainingExponents / 2, multiply);
+                BigInteger rightResult = rightTask.compute();
+                BigInteger leftResult = leftTask.join();
+                BigInteger result = multiply.apply(rightResult, leftResult);
+                result = multiply.apply(result, result);
+//                        System.out.println(this + " : " + result);
+                return result;
+            } else {
+                PrimeFactorizationFactorialTask rightTask = new PrimeFactorizationFactorialTask(
+                        n, startPrime, primes, approximators, remainingExponents, multiply);
+                BigInteger rightResult = rightTask.compute();
+                BigInteger leftResult = leftTask.join();
+                BigInteger result = multiply.apply(leftResult, leftResult);
+                result = multiply.apply(rightResult, result);
+//                        System.out.println(this + " : " + result);
+                return result;
+            }
+        }
+
+//        @Override
+//        protected BigInteger compute() {
+//            int length = endPrime - startPrime;
+//            if (length == 1) {
+//                if (startExponent == -1) {
+//                    startExponent = 0;
+//                    endExponent = approximate(n, approximators, primes.get(startPrime));
+//                }
+//                long exponentLength = endExponent - startExponent;
+//                if (exponentLength == 1) {
+////                    System.out.println(this +  " : " + primes.get(startPrime));
+//                    return BigInteger.valueOf(primes.get(startPrime));
+//                } else  {
+//                    long halfLength = exponentLength / 2;
+//                    PrimeFactorizationFactorialTask leftTask = new PrimeFactorizationFactorialTask(
+//                            n, startPrime, startExponent, startExponent + halfLength, primes, approximators, multiply);
+//                    leftTask.fork();
+//                    PrimeFactorizationFactorialTask rightTask = new PrimeFactorizationFactorialTask(
+//                            n, startPrime, startExponent + halfLength, endExponent, primes, approximators, multiply);
+//                    BigInteger result = multiply.apply(rightTask.compute(), leftTask.join());
+////                    System.out.println(this +  " : " + result);
+//                    return result;
+//                }
+//            } else {
+//                int halfLength = length / 2;
+//                PrimeFactorizationFactorialTask leftTask = new PrimeFactorizationFactorialTask(
+//                        n, startPrime, startPrime + halfLength, primes, approximators, multiply);
+//                leftTask.fork();
+//                PrimeFactorizationFactorialTask rightTask = new PrimeFactorizationFactorialTask(
+//                        n, startPrime + halfLength, endPrime, primes, approximators, multiply);
+//                BigInteger result = multiply.apply(rightTask.compute(), leftTask.join());
+////                System.out.println(this +  " : " + result);
+//                return result;
+//            }
+//        }
+
+        @Override
+        public String toString() {
+            return "PrimeFactorizationFactorialTask{" +
+                    "n=" + n +
+                    ", startPrime=" + startPrime +
+                    ", endPrime=" + endPrime +
+                    ", initialValue=" + initialValue +
+                    ", remainingExponents=" + remainingExponents +
+                    ", primes=" + primes +
+                    '}';
+        }
+    }
+
     public static void main(String[] args) throws RunnerException {
         Options opt = new OptionsBuilder()
                 .include(Benchmark_25_PrimeFactorization.class.getSimpleName())
+//                .forks(1)
+//                .warmupIterations(3)
+//                .measurementIterations(3)
                 .build();
         new Runner(opt).run();
     }

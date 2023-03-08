@@ -10,6 +10,7 @@ import static net.mirwaldt.streams.experimental.Benchmark_22_ForkJoinPoolFactori
 import static net.mirwaldt.streams.experimental.Benchmark_23_BestSplitStrategy.factorialCompletableFutureSequentialMultiply;
 import static net.mirwaldt.streams.experimental.Benchmark_24_PerfectSplitStrategy.perfectTomCookKaratsubaFactorialForkJoinPool;
 import static net.mirwaldt.streams.experimental.Benchmark_25_PrimeFactorization.primeFactorization;
+import static net.mirwaldt.streams.experimental.Benchmark_25_PrimeFactorization.primeFactorizationInFJP;
 
 /*
 Output:
@@ -114,6 +115,14 @@ public class ParallelStream_10_EfficientMultiplicationStatistics {
         watcher = new MultiplicationWatcher();
         result = primeFactorization(100_000, watcher::multiplyAndWatch);
         System.out.println("\tprimeFactorization:");
+        System.out.println("\t\tResult in bits: " + result.bitLength());
+        System.out.println("\t\tTotal multiplications: " + watcher.totalCount());
+        System.out.println("\t\tKaratsuba multiplications: " + watcher.karatsubaCount());
+        System.out.println("\t\tTomCook multiplications: " + watcher.tomCookCount());
+
+        watcher = new MultiplicationWatcher();
+        result = primeFactorizationInFJP(100_000, watcher::multiplyAndWatch);
+        System.out.println("\tprimeFactorizationInFJP:");
         System.out.println("\t\tResult in bits: " + result.bitLength());
         System.out.println("\t\tTotal multiplications: " + watcher.totalCount());
         System.out.println("\t\tKaratsuba multiplications: " + watcher.karatsubaCount());
