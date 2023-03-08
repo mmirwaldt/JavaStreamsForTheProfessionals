@@ -42,12 +42,15 @@ Multiplications:
 		TomCook multiplications: 188
  */
 public class ParallelStream_10_EfficientMultiplicationStatistics {
+
+    public static final int N = 100_000;
+
     // We want to find out how many karatsuba and tom-cook multiplications are possible and happen in all solutions
     public static void main(String[] args) throws ExecutionException, InterruptedException {
-        BigInteger result = factorialParallelStream(100_000, BigInteger::multiply);
+        BigInteger result = factorialParallelStream(N, BigInteger::multiply);
         System.out.println("Multiplications:");
         System.out.println("\tPossible at most:");
-        System.out.println("\t\tTotal multiplications: " + (100_000 - 1));
+        System.out.println("\t\tTotal multiplications: " + (N - 1));
         System.out.println("\t\tKaratsuba multiplications: "
                 + (result.bitLength() / KARATSUBA_THRESHOLD_IN_BITS - 1)); // -1 because we count pairs
         System.out.println("\t\tTomCook multiplications: "
@@ -55,7 +58,7 @@ public class ParallelStream_10_EfficientMultiplicationStatistics {
 
         // Let's count Karatsuba numbers first
         MultiplicationWatcher watcher = new MultiplicationWatcher();
-        result = factorialParallelStream(100_000, watcher::multiplyAndWatch);
+        result = factorialParallelStream(N, watcher::multiplyAndWatch);
         System.out.println("\tfactorialParallelStream:");
         System.out.println("\t\tResult in bits: " + result.bitLength());
         System.out.println("\t\tTotal multiplications: " + watcher.totalCount());
@@ -64,7 +67,7 @@ public class ParallelStream_10_EfficientMultiplicationStatistics {
         System.out.println("\t\tMultiplications (value <= " + MAX_VALUE + "): " + watcher.statistics());
 
         watcher = new MultiplicationWatcher();
-        result = factorialParallelInForkJoinPoolMinLength(100_000, watcher::multiplyAndWatch, 1000);
+        result = factorialParallelInForkJoinPoolMinLength(N, watcher::multiplyAndWatch, 1000);
         System.out.println("\tfactorialParallelForkJoinPool_1000:");
         System.out.println("\t\tResult in bits: " + result.bitLength());
         System.out.println("\t\tTotal multiplications: " + watcher.totalCount());
@@ -73,7 +76,7 @@ public class ParallelStream_10_EfficientMultiplicationStatistics {
         System.out.println("\t\tMultiplications (value <= " + MAX_VALUE + "): " + watcher.statistics());
 
         watcher = new MultiplicationWatcher();
-        result = factorialParallelInForkJoinPoolMinLength(100_000, watcher::multiplyAndWatch, 100);
+        result = factorialParallelInForkJoinPoolMinLength(N, watcher::multiplyAndWatch, 100);
         System.out.println("\tfactorialParallelForkJoinPool_100:");
         System.out.println("\t\tResult in bits: " + result.bitLength());
         System.out.println("\t\tTotal multiplications: " + watcher.totalCount());
@@ -82,7 +85,7 @@ public class ParallelStream_10_EfficientMultiplicationStatistics {
         System.out.println("\t\tMultiplications (value <= " + MAX_VALUE + "): " + watcher.statistics());
 
         watcher = new MultiplicationWatcher();
-        result = factorialParallelInForkJoinPoolMinLength(100_000, watcher::multiplyAndWatch, 1);
+        result = factorialParallelInForkJoinPoolMinLength(N, watcher::multiplyAndWatch, 1);
         System.out.println("\tfactorialParallelForkJoinPool_1:");
         System.out.println("\t\tResult in bits: " + result.bitLength());
         System.out.println("\t\tTotal multiplications: " + watcher.totalCount());
@@ -91,7 +94,7 @@ public class ParallelStream_10_EfficientMultiplicationStatistics {
         System.out.println("\t\tMultiplications (value <= " + MAX_VALUE + "): " + watcher.statistics());
 
         watcher = new MultiplicationWatcher();
-        result = tomCookKaratsubaFactorialParallelStream(100_000, watcher::multiplyAndWatch);
+        result = tomCookKaratsubaFactorialParallelStream(N, watcher::multiplyAndWatch);
         System.out.println("\ttomCookKaratsubaFactorialParallelStream:");
         System.out.println("\t\tResult in bits: " + result.bitLength());
         System.out.println("\t\tTotal multiplications: " + watcher.totalCount());
@@ -100,7 +103,7 @@ public class ParallelStream_10_EfficientMultiplicationStatistics {
         System.out.println("\t\tMultiplications (value <= " + MAX_VALUE + "): " + watcher.statistics());
 
         watcher = new MultiplicationWatcher();
-        result = tomCookKaratsubaFactorialForkJoinPool(100_000, watcher::multiplyAndWatch);
+        result = tomCookKaratsubaFactorialForkJoinPool(N, watcher::multiplyAndWatch);
         System.out.println("\ttomCookKaratsubaFactorialForkJoinPool:");
         System.out.println("\t\tResult in bits: " + result.bitLength());
         System.out.println("\t\tTotal multiplications: " + watcher.totalCount());
@@ -109,7 +112,7 @@ public class ParallelStream_10_EfficientMultiplicationStatistics {
         System.out.println("\t\tMultiplications (value <= " + MAX_VALUE + "): " + watcher.statistics());
 
         watcher = new MultiplicationWatcher();
-        result = factorialCompletableFutureSequentialMultiply(100_000, watcher::multiplyAndWatch);
+        result = factorialCompletableFutureSequentialMultiply(N, watcher::multiplyAndWatch);
         System.out.println("\tfactorialCompletableFutureSequentialMultiply:");
         System.out.println("\t\tResult in bits: " + result.bitLength());
         System.out.println("\t\tTotal multiplications: " + watcher.totalCount());
@@ -118,7 +121,7 @@ public class ParallelStream_10_EfficientMultiplicationStatistics {
         System.out.println("\t\tMultiplications (value <= " + MAX_VALUE + "): " + watcher.statistics());
 
         watcher = new MultiplicationWatcher();
-        result = perfectTomCookKaratsubaFactorialForkJoinPool(100_000, watcher::multiplyAndWatch);
+        result = perfectTomCookKaratsubaFactorialForkJoinPool(N, watcher::multiplyAndWatch);
         System.out.println("\tperfectTomCookKaratsubaFactorialForkJoinPool:");
         System.out.println("\t\tResult in bits: " + result.bitLength());
         System.out.println("\t\tTotal multiplications: " + watcher.totalCount());
@@ -127,7 +130,7 @@ public class ParallelStream_10_EfficientMultiplicationStatistics {
         System.out.println("\t\tMultiplications (value <= " + MAX_VALUE + "): " + watcher.statistics());
 
         watcher = new MultiplicationWatcher();
-        result = primeFactorization(100_000, watcher::multiplyAndWatch);
+        result = primeFactorization(N, watcher::multiplyAndWatch);
         System.out.println("\tprimeFactorization:");
         System.out.println("\t\tResult in bits: " + result.bitLength());
         System.out.println("\t\tTotal multiplications: " + watcher.totalCount());
@@ -136,7 +139,7 @@ public class ParallelStream_10_EfficientMultiplicationStatistics {
         System.out.println("\t\tMultiplications (value <= " + MAX_VALUE + "): " + watcher.statistics());
 
         watcher = new MultiplicationWatcher();
-        result = primeFactorizationInFJP(100_000, watcher::multiplyAndWatch);
+        result = primeFactorizationInFJP(N, watcher::multiplyAndWatch);
         System.out.println("\tprimeFactorizationInFJP:");
         System.out.println("\t\tResult in bits: " + result.bitLength());
         System.out.println("\t\tTotal multiplications: " + watcher.totalCount());
