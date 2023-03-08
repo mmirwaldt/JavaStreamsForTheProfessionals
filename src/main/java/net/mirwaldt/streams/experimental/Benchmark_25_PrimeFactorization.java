@@ -339,8 +339,22 @@ public class Benchmark_25_PrimeFactorization {
                 }
                 if (powerRange.length() == 1) {
                     return prime;
-                } else if(powerRange.length() == 2) {
-                    return powerRange.power(2, () -> multiply.apply(prime, prime));
+                } else if (powerRange.length() == 3) {
+                    PowerRange leftPowerRange = new PowerRange(
+                            powerRange.startExponent(), powerRange.startExponent() + powerRange.length() / 3, powerRange.prime(), powerRange.powers());
+                    PrimeFactorizationFactorialTask leftTask = new PrimeFactorizationFactorialTask(
+                            n, primeRange, prime, leftPowerRange, approximators, multiply);
+                    leftTask.fork();
+                    PowerRange rightPowerRange = new PowerRange(
+                            powerRange.endExponent() - powerRange.length() / 3, powerRange.endExponent(), powerRange.prime(), powerRange.powers());
+                    PrimeFactorizationFactorialTask rightTask = new PrimeFactorizationFactorialTask(
+                            n, primeRange, prime, rightPowerRange, approximators, multiply);
+                    BigInteger rightResult = rightTask.compute();
+                    BigInteger leftResult = leftTask.join();
+                    BigInteger squaredLeftResult = powerRange.power(2, () -> multiply.apply(leftResult, leftResult));
+                    BigInteger result = multiply.apply(squaredLeftResult, rightResult);
+//                    System.out.println(this + " : " + result);
+                    return result;
                 } else {
                     PowerRange leftPowerRange = new PowerRange(
                             powerRange.startExponent(), powerRange.startExponent() + powerRange.length() / 2, powerRange.prime(), powerRange.powers());
