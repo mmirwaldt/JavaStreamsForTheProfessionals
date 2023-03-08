@@ -335,7 +335,12 @@ public class Benchmark_25_PrimeFactorization {
                 if (powerRange == null) {
                     int primeAsInt = primeRange.onlyOnePrime();
                     prime = BigInteger.valueOf(primeAsInt);
-                    powerRange = new PowerRange(0, approximate(n, approximators, primeAsInt), primeAsInt, new ConcurrentHashMap<>());
+                    long exponent = approximate(n, approximators, primeAsInt);
+                    ConcurrentMap<Long, BigInteger> map = null;
+                    if(1 < exponent) {
+                        map = new ConcurrentHashMap<>();
+                    }
+                    powerRange = new PowerRange(0, exponent, primeAsInt, map);
                 }
                 if (powerRange.length() == 1) {
                     return prime;
