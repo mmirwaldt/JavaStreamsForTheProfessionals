@@ -287,13 +287,12 @@ public class Benchmark_25_PrimeFactorization {
         private FactorialApproximator[] approximators;
 
         private final int n;
-        private final int startPrime;
-        private final int endPrime;
+
+        private final PrimeRange primeRange;
 
         private BigInteger initialValue = ONE;
         private long remainingExponents = -1;
 
-        private final List<Integer> primes;
         private final BinaryOperator<BigInteger> multiply;
         private BigInteger prime;
 
@@ -303,33 +302,26 @@ public class Benchmark_25_PrimeFactorization {
         public PrimeFactorizationFactorialTask(
                 int n, List<Integer> primes, FactorialApproximator[] approximators, BinaryOperator<BigInteger> multiply) {
             this.n = n;
-            this.primes = primes;
+            this.primeRange = new PrimeRange(0, primes.size(), primes);
             this.approximators = approximators;
             this.initialValue = ONE.shiftLeft((int) approximate(n, approximators, 2));
-            this.startPrime = 0;
-            this.endPrime = primes.size();
             this.multiply = multiply;
         }
 
         public PrimeFactorizationFactorialTask(
                 int n,
-                int startPrime,
-                int endPrime,
-                List<Integer> primes,
+                PrimeRange primeRange,
                 FactorialApproximator[] approximators,
                 BinaryOperator<BigInteger> multiply) {
             this.n = n;
-            this.startPrime = startPrime;
-            this.endPrime = endPrime;
-            this.primes = primes;
+            this.primeRange = primeRange;
             this.approximators = approximators;
             this.multiply = multiply;
         }
 
         public PrimeFactorizationFactorialTask(
                 int n,
-                int startPrime,
-                List<Integer> primes,
+                PrimeRange primeRange,
                 BigInteger prime,
                 FactorialApproximator[] approximators,
                 long remainingExponents,
@@ -337,10 +329,8 @@ public class Benchmark_25_PrimeFactorization {
                 AtomicReferenceArray<BigInteger> powers,
                 long[] exponents) {
             this.n = n;
-            this.startPrime = startPrime;
-            this.endPrime = startPrime + 1;
             this.remainingExponents = remainingExponents;
-            this.primes = primes;
+            this.primeRange = primeRange;
             this.prime = prime;
             this.approximators = approximators;
             this.multiply = multiply;
@@ -350,10 +340,10 @@ public class Benchmark_25_PrimeFactorization {
 
         @Override
         protected BigInteger compute() {
-            int length = endPrime - startPrime;
+            int length = primeRange.length();
             if (length == 1) {
                 if (remainingExponents == -1) {
-                    int primeAsInt = primes.get(startPrime);
+                    int primeAsInt = primeRange.onlyOnePrime();
                     prime = BigInteger.valueOf(primeAsInt);
                     remainingExponents = approximate(n, approximators, primeAsInt);
                 }
@@ -368,22 +358,26 @@ public class Benchmark_25_PrimeFactorization {
                     return calculateForRemaining( 2);
                 } else {
                     PrimeFactorizationFactorialTask leftTask = new PrimeFactorizationFactorialTask(
-                            n, startPrime, primes, prime, approximators, remainingExponents / 2, multiply, powers, exponents);
+                            n, primeRange, prime, approximators, remainingExponents / 2, multiply, powers, exponents);
                     remainingExponents -= remainingExponents / 2;
                     leftTask.fork();
                     PrimeFactorizationFactorialTask rightTask = new PrimeFactorizationFactorialTask(
-                            n, startPrime, primes, prime, approximators, remainingExponents, multiply, powers, exponents);
+                            n, primeRange, prime, approximators, remainingExponents, multiply, powers, exponents);
                     BigInteger result = multiply.apply(rightTask.compute(), leftTask.join());
 //                        System.out.println(this + " : " + result);
                     return result;
                 }
             } else {
                 int halfLength = length / 2;
+                PrimeRange leftRange = new PrimeRange(
+                        primeRange.startPrime(), primeRange.startPrime() + halfLength, primeRange.primes());
                 PrimeFactorizationFactorialTask leftTask = new PrimeFactorizationFactorialTask(
-                        n, startPrime, startPrime + halfLength, primes, approximators, multiply);
+                        n, leftRange, approximators, multiply);
                 leftTask.fork();
+                PrimeRange rightRange = new PrimeRange(
+                        primeRange.startPrime() + halfLength, primeRange.endPrime(), primeRange.primes());
                 PrimeFactorizationFactorialTask rightTask = new PrimeFactorizationFactorialTask(
-                        n, startPrime + halfLength, endPrime, primes, approximators, multiply);
+                        n, rightRange, approximators, multiply);
                 BigInteger result = multiply.apply(rightTask.compute(), leftTask.join());
 //                System.out.println(this + " : " + result);
                 return result;
@@ -392,12 +386,12 @@ public class Benchmark_25_PrimeFactorization {
 
         private BigInteger calculateForRemaining(int remainder) {
             PrimeFactorizationFactorialTask leftTask = new PrimeFactorizationFactorialTask(
-                    n, startPrime, primes, prime, approximators, (remainingExponents - remainder) / 3, multiply, powers, exponents);
+                    n, primeRange, prime, approximators, (remainingExponents - remainder) / 3, multiply, powers, exponents);
             remainingExponents -= 2 * (remainingExponents - remainder) / 3;
             leftTask.fork();
             if (2 <= remainingExponents) {
                 PrimeFactorizationFactorialTask rightTask = new PrimeFactorizationFactorialTask(
-                        n, startPrime, primes, prime, approximators, remainingExponents / 2, multiply, powers, exponents);
+                        n, primeRange, prime, approximators, remainingExponents / 2, multiply, powers, exponents);
                 BigInteger rightResult = rightTask.compute();
                 BigInteger leftResult = leftTask.join();
                 BigInteger result = multiply.apply(rightResult, leftResult);
@@ -409,7 +403,7 @@ public class Benchmark_25_PrimeFactorization {
                 return result;
             } else {
                 PrimeFactorizationFactorialTask rightTask = new PrimeFactorizationFactorialTask(
-                        n, startPrime, primes, prime, approximators, remainingExponents, multiply, powers, exponents);
+                        n, primeRange, prime, approximators, remainingExponents, multiply, powers, exponents);
                 BigInteger rightResult = rightTask.compute();
                 BigInteger leftResult = leftTask.join();
                 BigInteger result = multiply.apply(leftResult, leftResult);
@@ -419,6 +413,25 @@ public class Benchmark_25_PrimeFactorization {
             }
         }
 
+        record PrimeRange(int startPrime, int endPrime, List<Integer> primes) {
+
+            public PrimeRange(int startPrime, int endPrime, List<Integer> primes) {
+                this.startPrime = startPrime;
+                this.endPrime = endPrime;
+                this.primes = List.copyOf(primes);
+            }
+
+            int length() {
+                return endPrime - startPrime;
+            }
+
+            int onlyOnePrime() {
+                if(1 < length()) {
+                    throw new IllegalStateException("More than one prime available");
+                }
+                return primes.get(startPrime);
+            }
+        }
 //        @Override
 //        protected BigInteger compute() {
 //            int length = endPrime - startPrime;
@@ -459,11 +472,9 @@ public class Benchmark_25_PrimeFactorization {
         public String toString() {
             return "PrimeFactorizationFactorialTask{" +
                     "n=" + n +
-                    ", startPrime=" + startPrime +
-                    ", endPrime=" + endPrime +
+                    ", primeRange=" + primeRange +
                     ", initialValue=" + initialValue +
                     ", remainingExponents=" + remainingExponents +
-                    ", primes=" + primes +
                     '}';
         }
     }
