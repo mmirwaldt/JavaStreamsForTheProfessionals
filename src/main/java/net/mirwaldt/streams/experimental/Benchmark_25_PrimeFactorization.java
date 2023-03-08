@@ -339,33 +339,26 @@ public class Benchmark_25_PrimeFactorization {
                 }
                 if (powerRange.length() == 1) {
                     return prime;
-                } else if (powerRange.length() == 3) {
+                } else if (powerRange.length() == 2) {
+                    return powerRange.power(2, () -> multiply.apply(prime, prime));
+                } else {
+                    long unsquaredExponent = (powerRange.length() - 1) / 2;
                     PowerRange leftPowerRange = new PowerRange(
-                            powerRange.startExponent(), powerRange.startExponent() + powerRange.length() / 3, powerRange.prime(), powerRange.powers());
+                            powerRange.startExponent(), powerRange.startExponent() + unsquaredExponent, powerRange.prime(), powerRange.powers());
                     PrimeFactorizationFactorialTask leftTask = new PrimeFactorizationFactorialTask(
                             n, primeRange, prime, leftPowerRange, approximators, multiply);
+                    long squaredExponent = 2 * unsquaredExponent;
+                    long remaining = powerRange.length() - squaredExponent;
+                    assert 0 < remaining;
                     leftTask.fork();
                     PowerRange rightPowerRange = new PowerRange(
-                            powerRange.endExponent() - powerRange.length() / 3, powerRange.endExponent(), powerRange.prime(), powerRange.powers());
+                            powerRange.endExponent() - remaining, powerRange.endExponent(), powerRange.prime(), powerRange.powers());
                     PrimeFactorizationFactorialTask rightTask = new PrimeFactorizationFactorialTask(
                             n, primeRange, prime, rightPowerRange, approximators, multiply);
                     BigInteger rightResult = rightTask.compute();
                     BigInteger leftResult = leftTask.join();
-                    BigInteger squaredLeftResult = powerRange.power(2, () -> multiply.apply(leftResult, leftResult));
+                    BigInteger squaredLeftResult = powerRange.power(squaredExponent, () -> multiply.apply(leftResult, leftResult));
                     BigInteger result = multiply.apply(squaredLeftResult, rightResult);
-//                    System.out.println(this + " : " + result);
-                    return result;
-                } else {
-                    PowerRange leftPowerRange = new PowerRange(
-                            powerRange.startExponent(), powerRange.startExponent() + powerRange.length() / 2, powerRange.prime(), powerRange.powers());
-                    PrimeFactorizationFactorialTask leftTask = new PrimeFactorizationFactorialTask(
-                            n, primeRange, prime, leftPowerRange, approximators, multiply);
-                    leftTask.fork();
-                    PowerRange rightPowerRange = new PowerRange(
-                            leftPowerRange.endExponent(), powerRange.endExponent(), powerRange.prime(), powerRange.powers());
-                    PrimeFactorizationFactorialTask rightTask = new PrimeFactorizationFactorialTask(
-                            n, primeRange, prime, rightPowerRange, approximators, multiply);
-                    BigInteger result = multiply.apply(rightTask.compute(), leftTask.join());
 //                    System.out.println(this + " : " + result);
                     return result;
                 }
@@ -407,12 +400,12 @@ public class Benchmark_25_PrimeFactorization {
         }
 
 
-        record PowerRange(long startExponent, long endExponent, long prime, ConcurrentMap<Integer, BigInteger> powers) {
+        record PowerRange(long startExponent, long endExponent, long prime, ConcurrentMap<Long, BigInteger> powers) {
             long length() {
                 return endExponent - startExponent;
             }
 
-            BigInteger power(int exponent, Supplier<BigInteger> resultSupplier) {
+            BigInteger power(long exponent, Supplier<BigInteger> resultSupplier) {
                 return powers.computeIfAbsent(exponent, e -> resultSupplier.get());
             }
         }
