@@ -33,7 +33,6 @@ Benchmark_11_ParallelFactorial.tomCookKaratsubaFactorialForkJoinPoolSequentialMu
 Benchmark_11_ParallelFactorial.tomCookKaratsubaFactorialParallelStreamParallelMultiply    avgt   25  18.838 ± 0.045  ms/op
 Benchmark_11_ParallelFactorial.tomCookKaratsubaFactorialParallelStreamSequentialMultiply  avgt   25  32.840 ± 0.122  ms/op
 
-
 Saturation can be measured in bash by:
 while true; do uptime | cut -d ',' -f 2,4 ; sleep 1; done
 Example output:
