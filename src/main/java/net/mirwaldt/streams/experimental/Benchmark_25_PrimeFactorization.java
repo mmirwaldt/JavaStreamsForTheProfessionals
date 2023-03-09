@@ -59,10 +59,10 @@ public class Benchmark_25_PrimeFactorization {
 //    }
 
 
-//    @Benchmark
-//    public BigInteger primeFactorizationInFJP() {
-//        return primeFactorizationInFJP(new PrimeFactorizationFactorialTask(N, primes, approximators, BigInteger::parallelMultiply));
-//    }
+    @Benchmark
+    public BigInteger primeFactorizationInFJP() {
+        return primeFactorizationInFJP(new PrimeFactorizationFactorialTask(N, primes, approximators, BigInteger::parallelMultiply));
+    }
 
     /*
         Approximating appears to be fast enough:
@@ -118,17 +118,18 @@ public class Benchmark_25_PrimeFactorization {
 
     public static BigInteger primeFactorization(
             int n, List<Integer> primes, FactorialApproximator[] approximators, BinaryOperator<BigInteger> multiply) {
-        BigInteger power2Result = ONE.shiftLeft((int) approximate(n, approximators, 2));
+        int squaredN = n * n;
+        BigInteger power2Result = ONE.shiftLeft((int) approximate(n, squaredN, approximators, 2));
         BigInteger[] results = primes.parallelStream()
                 .collect(() -> new BigInteger[]{ONE, ONE, ONE},
-                        (array, prime) -> power5(prime, approximate(n, approximators, prime), array, multiply),
+                        (array, prime) -> power5(prime, approximate(n, squaredN, approximators, prime), array, multiply),
                         (left, right) -> combine(left, right, multiply));
         accumulate(results, power2Result, multiply);
         return multiply.apply(results[0], multiply.apply(results[1], results[2]));
     }
 
-    private static long approximate(int n, FactorialApproximator[] approximators, Integer p) {
-        if (p <= n * n) {
+    private static long approximate(int n, int squaredN, FactorialApproximator[] approximators, Integer p) {
+        if (p <= squaredN) {
             return approximators[max(2, maxLog(n, p))].approximate(n, p);
         } else {
             return 1;
@@ -178,6 +179,7 @@ public class Benchmark_25_PrimeFactorization {
         private final FactorialApproximator[] approximators;
 
         private final int n;
+        private final int squaredN;
 
         private final PrimeRange primeRange;
 
@@ -190,18 +192,21 @@ public class Benchmark_25_PrimeFactorization {
         public PrimeFactorizationFactorialTask(
                 int n, List<Integer> primes, FactorialApproximator[] approximators, BinaryOperator<BigInteger> multiply) {
             this.n = n;
+            this.squaredN = n * n;
             this.primeRange = new PrimeRange(0, primes.size(), primes);
             this.approximators = approximators;
-            this.initialValue = ONE.shiftLeft((int) approximate(n, approximators, 2));
+            this.initialValue = ONE.shiftLeft((int) approximate(n, squaredN, approximators, 2));
             this.multiply = multiply;
         }
 
         public PrimeFactorizationFactorialTask(
                 int n,
+                int squaredN,
                 PrimeRange primeRange,
                 FactorialApproximator[] approximators,
                 BinaryOperator<BigInteger> multiply) {
             this.n = n;
+            this.squaredN = squaredN;
             this.primeRange = primeRange;
             this.approximators = approximators;
             this.multiply = multiply;
@@ -209,12 +214,14 @@ public class Benchmark_25_PrimeFactorization {
 
         public PrimeFactorizationFactorialTask(
                 int n,
+                int squaredN,
                 PrimeRange primeRange,
                 BigInteger prime,
                 PowerRange powerRange,
                 FactorialApproximator[] approximators,
                 BinaryOperator<BigInteger> multiply) {
             this.n = n;
+            this.squaredN = squaredN;
             this.primeRange = primeRange;
             this.prime = prime;
             this.approximators = approximators;
@@ -232,7 +239,7 @@ public class Benchmark_25_PrimeFactorization {
                 if (powerRange.length() == 1) {
                     return prime;
                 } else if (powerRange.length() == 2) {
-                    return powerRange.power(2, () -> multiply.apply(prime, prime));
+                    return powerRange.power(2, prime, multiply);
                 } else {
                     return splitByPowers();
                 }
@@ -246,7 +253,7 @@ public class Benchmark_25_PrimeFactorization {
             PowerRange leftPowerRange = new PowerRange(
                     powerRange.startExponent(), powerRange.startExponent() + unsquaredExponent, powerRange.prime(), powerRange.powers());
             PrimeFactorizationFactorialTask leftTask = new PrimeFactorizationFactorialTask(
-                    n, primeRange, prime, leftPowerRange, approximators, multiply);
+                    n, squaredN, primeRange, prime, leftPowerRange, approximators, multiply);
             long squaredExponent = 2 * unsquaredExponent;
             long remaining = powerRange.length() - squaredExponent;
             assert 0 < remaining;
@@ -254,10 +261,10 @@ public class Benchmark_25_PrimeFactorization {
             PowerRange rightPowerRange = new PowerRange(
                     powerRange.endExponent() - remaining, powerRange.endExponent(), powerRange.prime(), powerRange.powers());
             PrimeFactorizationFactorialTask rightTask = new PrimeFactorizationFactorialTask(
-                    n, primeRange, prime, rightPowerRange, approximators, multiply);
+                    n, squaredN, primeRange, prime, rightPowerRange, approximators, multiply);
             BigInteger rightResult = rightTask.compute();
             BigInteger leftResult = leftTask.join();
-            BigInteger squaredLeftResult = powerRange.power(squaredExponent, () -> multiply.apply(leftResult, leftResult));
+            BigInteger squaredLeftResult = powerRange.power(squaredExponent, leftResult, multiply);
             return multiply.apply(squaredLeftResult, rightResult);
         }
 
@@ -267,12 +274,12 @@ public class Benchmark_25_PrimeFactorization {
             PrimeRange leftRange = new PrimeRange(
                     primeRange.startPrime(), primeRange.startPrime() + halfLength, primeRange.primes());
             PrimeFactorizationFactorialTask leftTask = new PrimeFactorizationFactorialTask(
-                    n, leftRange, approximators, multiply);
+                    n, squaredN, leftRange, approximators, multiply);
             leftTask.fork();
             PrimeRange rightRange = new PrimeRange(
                     primeRange.startPrime() + halfLength, primeRange.endPrime(), primeRange.primes());
             PrimeFactorizationFactorialTask rightTask = new PrimeFactorizationFactorialTask(
-                    n, rightRange, approximators, multiply);
+                    n, squaredN, rightRange, approximators, multiply);
             BigInteger result = multiply.apply(rightTask.compute(), leftTask.join());
             return (initialValue.equals(ONE)) ? result : multiply.apply(initialValue, result);
         }
@@ -280,7 +287,7 @@ public class Benchmark_25_PrimeFactorization {
         private void initPowerRange() {
             int primeAsInt = primeRange.firstPrime();
             prime = BigInteger.valueOf(primeAsInt);
-            long exponent = approximate(n, approximators, primeAsInt);
+            long exponent = approximate(n, squaredN, approximators, primeAsInt);
             ConcurrentMap<Long, BigInteger> map = null;
             if (1 < exponent) {
                 map = new ConcurrentHashMap<>();
@@ -315,9 +322,9 @@ public class Benchmark_25_PrimeFactorization {
                 return endExponent - startExponent;
             }
 
-            BigInteger power(long exponent, Supplier<BigInteger> resultSupplier) {
+            BigInteger power(long exponent, BigInteger unsquared, BinaryOperator<BigInteger> multiply) {
                 // powers of 2 are bad hash codes because they lead to many hash collisions because of using only the lower bits
-                return powers.computeIfAbsent((exponent * 31) / 7, e -> resultSupplier.get());
+                return powers.computeIfAbsent((exponent * 31) / 7, (e) -> multiply.apply(unsquared, unsquared));
             }
         }
 
