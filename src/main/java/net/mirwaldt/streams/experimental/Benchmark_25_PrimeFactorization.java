@@ -53,15 +53,31 @@ public class Benchmark_25_PrimeFactorization {
                 .toList();
     }
 
-    @Benchmark
-    public BigInteger primeFactorization() {
-        return primeFactorization(N, primes, approximators, BigInteger::parallelMultiply);
-    }
+//    @Benchmark
+//    public BigInteger primeFactorization() {
+//        return primeFactorization(N, primes, approximators, BigInteger::parallelMultiply);
+//    }
 
-    @Benchmark
-    public BigInteger primeFactorizationInFJP() {
-        return primeFactorizationInFJP(new PrimeFactorizationFactorialTask(N, primes, approximators, BigInteger::parallelMultiply));
-    }
+
+//    @Benchmark
+//    public BigInteger primeFactorizationInFJP() {
+//        return primeFactorizationInFJP(new PrimeFactorizationFactorialTask(N, primes, approximators, BigInteger::parallelMultiply));
+//    }
+
+    /*
+        Approximating appears to be fast enough:
+        # Run progress: 0.00% complete, ETA 00:08:20
+        # Fork: 1 of 5
+        # Warmup Iteration   1: 0.079 ms/op
+        # Warmup Iteration   2: 0.078 ms/op
+        # Warmup Iteration   3: 0.078 ms/op
+     */
+//    @Benchmark
+//    public long primeFactorization() {
+//        return primes.parallelStream()
+//                .mapToLong(prime -> approximate(N, approximators, prime))
+//                .sum();
+//    }
 
     public static BigInteger primeFactorizationInFJP(int n, BinaryOperator<BigInteger> multiply) {
         DefaultPrimeSource primeSource = new DefaultPrimeSource();
@@ -112,7 +128,7 @@ public class Benchmark_25_PrimeFactorization {
     }
 
     private static long approximate(int n, FactorialApproximator[] approximators, Integer p) {
-        if (p <= n / 2) {
+        if (p <= n * n) {
             return approximators[max(2, maxLog(n, p))].approximate(n, p);
         } else {
             return 1;
@@ -300,7 +316,8 @@ public class Benchmark_25_PrimeFactorization {
             }
 
             BigInteger power(long exponent, Supplier<BigInteger> resultSupplier) {
-                return powers.computeIfAbsent(exponent, e -> resultSupplier.get());
+                // powers of 2 are bad hash codes because they lead to many hash collisions because of using only the lower bits
+                return powers.computeIfAbsent((exponent * 31) / 7, e -> resultSupplier.get());
             }
         }
 
