@@ -8,7 +8,9 @@ import org.openjdk.jmh.runner.options.OptionsBuilder;
 
 import java.math.BigInteger;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.concurrent.*;
 import java.util.function.BinaryOperator;
 import java.util.function.Supplier;
@@ -284,15 +286,26 @@ public class Benchmark_25_PrimeFactorization {
             return (initialValue.equals(ONE)) ? result : multiply.apply(initialValue, result);
         }
 
+        /*
+            # Run progress: 0.00% complete, ETA 00:08:20
+            # Fork: 1 of 5
+            # Warmup Iteration   1: 19.609 ms/op
+            # Warmup Iteration   2: 18.421 ms/op
+            # Warmup Iteration   3: 18.410 ms/op
+         */
         private void initPowerRange() {
             int primeAsInt = primeRange.firstPrime();
             prime = BigInteger.valueOf(primeAsInt);
             long exponent = approximate(n, squaredN, approximators, primeAsInt);
-            ConcurrentMap<Long, BigInteger> map = null;
             if (1 < exponent) {
-                map = new ConcurrentHashMap<>();
+                powerRange = new PowerRange(0, exponent, primeAsInt, new HashMap<>());
+                BigInteger squaredPrime = powerRange.power(2L, prime, multiply);
+                for (long i = 4; i <= exponent; i *= 2) {
+                    squaredPrime = powerRange.power(i, squaredPrime, multiply);
+                }
+            } else {
+                powerRange = new PowerRange(0, exponent, primeAsInt, null);
             }
-            powerRange = new PowerRange(0, exponent, primeAsInt, map);
         }
 
         record PrimeRange(int startPrime, int endPrime, List<Integer> primes) {
@@ -317,7 +330,7 @@ public class Benchmark_25_PrimeFactorization {
         }
 
 
-        record PowerRange(long startExponent, long endExponent, long prime, ConcurrentMap<Long, BigInteger> powers) {
+        record PowerRange(long startExponent, long endExponent, long prime, Map<Long, BigInteger> powers) {
             long length() {
                 return endExponent - startExponent;
             }
