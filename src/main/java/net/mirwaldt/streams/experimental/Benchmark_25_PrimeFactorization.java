@@ -7,14 +7,13 @@ import org.openjdk.jmh.runner.options.Options;
 import org.openjdk.jmh.runner.options.OptionsBuilder;
 
 import java.math.BigInteger;
-import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.concurrent.*;
+import java.util.concurrent.ForkJoinPool;
+import java.util.concurrent.RecursiveTask;
+import java.util.concurrent.TimeUnit;
 import java.util.function.BinaryOperator;
-import java.util.function.Supplier;
-import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
 import static java.lang.Math.max;
@@ -240,8 +239,6 @@ public class Benchmark_25_PrimeFactorization {
                 }
                 if (powerRange.length() == 1) {
                     return prime;
-                } else if (powerRange.length() == 2) {
-                    return powerRange.power(2, prime, multiply);
                 } else {
                     return splitByPowers();
                 }
@@ -251,23 +248,22 @@ public class Benchmark_25_PrimeFactorization {
         }
 
         private BigInteger splitByPowers() {
-            long unsquaredExponent = (powerRange.length() - 1) / 2;
-            PowerRange leftPowerRange = new PowerRange(
-                    powerRange.startExponent(), powerRange.startExponent() + unsquaredExponent, powerRange.prime(), powerRange.powers());
-            PrimeFactorizationFactorialTask leftTask = new PrimeFactorizationFactorialTask(
-                    n, squaredN, primeRange, prime, leftPowerRange, approximators, multiply);
-            long squaredExponent = 2 * unsquaredExponent;
-            long remaining = powerRange.length() - squaredExponent;
-            assert 0 < remaining;
-            leftTask.fork();
-            PowerRange rightPowerRange = new PowerRange(
-                    powerRange.endExponent() - remaining, powerRange.endExponent(), powerRange.prime(), powerRange.powers());
-            PrimeFactorizationFactorialTask rightTask = new PrimeFactorizationFactorialTask(
-                    n, squaredN, primeRange, prime, rightPowerRange, approximators, multiply);
-            BigInteger rightResult = rightTask.compute();
-            BigInteger leftResult = leftTask.join();
-            BigInteger squaredLeftResult = powerRange.power(squaredExponent, leftResult, multiply);
-            return multiply.apply(squaredLeftResult, rightResult);
+            long squaredExponent = Long.highestOneBit(powerRange.length());
+            if(powerRange.length() == squaredExponent) {
+                return powerRange.power(squaredExponent);
+            } else  {
+                PowerRange leftPowerRange = new PowerRange(
+                        powerRange.startExponent(), powerRange.startExponent() + squaredExponent, powerRange.prime(), powerRange.powers());
+                PrimeFactorizationFactorialTask leftTask = new PrimeFactorizationFactorialTask(
+                        n, squaredN, primeRange, prime, leftPowerRange, approximators, multiply);
+                long remaining = powerRange.length() - squaredExponent;
+                leftTask.fork();
+                PowerRange rightPowerRange = new PowerRange(
+                        powerRange.endExponent() - remaining, powerRange.endExponent(), powerRange.prime(), powerRange.powers());
+                PrimeFactorizationFactorialTask rightTask = new PrimeFactorizationFactorialTask(
+                        n, squaredN, primeRange, prime, rightPowerRange, approximators, multiply);
+                return multiply.apply(rightTask.compute(), leftTask.join());
+            }
         }
 
         private BigInteger splitByPrimes(int length) {
@@ -299,9 +295,10 @@ public class Benchmark_25_PrimeFactorization {
             long exponent = approximate(n, squaredN, approximators, primeAsInt);
             if (1 < exponent) {
                 powerRange = new PowerRange(0, exponent, primeAsInt, new HashMap<>());
-                BigInteger squaredPrime = powerRange.power(2L, prime, multiply);
-                for (long i = 4; i <= exponent; i *= 2) {
-                    squaredPrime = powerRange.power(i, squaredPrime, multiply);
+                BigInteger squaredPrime = prime;
+                for (long i = 2; i <= exponent; i *= 2) {
+                    squaredPrime = multiply.apply(squaredPrime, squaredPrime);
+                    powerRange.addPower(i, squaredPrime);
                 }
             } else {
                 powerRange = new PowerRange(0, exponent, primeAsInt, null);
@@ -335,9 +332,17 @@ public class Benchmark_25_PrimeFactorization {
                 return endExponent - startExponent;
             }
 
-            BigInteger power(long exponent, BigInteger unsquared, BinaryOperator<BigInteger> multiply) {
+            BigInteger power(long exponent) {
+                return powers.get(hashBetter(exponent));
+            }
+
+            private static long hashBetter(long exponent) {
                 // powers of 2 are bad hash codes because they lead to many hash collisions because of using only the lower bits
-                return powers.computeIfAbsent((exponent * 31) / 7, (e) -> multiply.apply(unsquared, unsquared));
+                return (exponent * 31) / 7;
+            }
+
+            void addPower(long exponent, BigInteger squared) {
+                powers.put(hashBetter(exponent), squared);
             }
         }
 
